@@ -1,0 +1,183 @@
+.ss {
+  --ss-part-ring: #ffffff10;
+  --ss-part-hover: #ffffff0a;
+  --ss-void: #050505;
+  --ss-door: #0f0f0f;
+  --ss-throat: #000000;
+}
+
+[data-theme="light"] .ss {
+  --ss-part-ring: #00000014;
+  --ss-part-hover: #0000000a;
+  --ss-void: #6f6f73;
+  --ss-door: #efefec;
+  --ss-throat: #4a4a4e;
+}
+
+.ss .iso-plate {
+  padding: 52px 24px 56px;
+  overflow: hidden;
+}
+
+.ss-stage {
+  position: relative;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ss-stage:focus-visible {
+  outline: 1px solid var(--anatomy-muted);
+  outline-offset: 6px;
+}
+
+.ss-cav {
+  --anatomy-paper: #0b0b0b;
+  --anatomy-top: #121212;
+  --anatomy-shade-0: #080808;
+  --anatomy-shade-1: #0a0a0a;
+  --anatomy-shade-2: #0c0c0c;
+  --anatomy-shade-3: #0e0e0e;
+}
+
+[data-theme="light"] .ss-cav {
+  --anatomy-paper: #bdbdb9;
+  --anatomy-top: #cbcbc7;
+  --anatomy-shade-0: #a9a9a5;
+  --anatomy-shade-1: #b1b1ad;
+  --anatomy-shade-2: #b9b9b5;
+  --anatomy-shade-3: #c1c1bd;
+}
+
+.ss-in {
+  stroke: #262626;
+}
+
+[data-theme="light"] .ss-in {
+  stroke: #9a9a96;
+}
+
+.ss-tile {
+  --anatomy-top: #0f0f0f;
+  --anatomy-shade-0: #070707;
+  --anatomy-shade-1: #090909;
+  --anatomy-shade-2: #0b0b0b;
+  --anatomy-shade-3: #0d0d0d;
+  --anatomy-faint: #1c1c1c;
+}
+
+[data-theme="light"] .ss-tile {
+  --anatomy-top: #8e8e92;
+  --anatomy-shade-0: #6c6c70;
+  --anatomy-shade-1: #757579;
+  --anatomy-shade-2: #7e7e82;
+  --anatomy-shade-3: #87878b;
+  --anatomy-faint: #5c5c60;
+}
+
+.ss-throat {
+  fill: var(--ss-throat);
+  stroke: none;
+}
+
+[data-theme="light"] .ss-bell-in {
+  stroke: #9a9a9e;
+}
+
+.ss-void {
+  fill: var(--ss-void);
+  stroke: none;
+}
+
+.ss-door {
+  fill: var(--ss-door);
+  stroke: none;
+}
+
+.ss-stage[data-focus] .it:not([data-on]) {
+  --anatomy-hi: var(--anatomy-mid);
+  --anatomy-mid: var(--anatomy-lo);
+}
+
+.it[data-on] {
+  --anatomy-hi: var(--anatomy-lit);
+  --anatomy-mid: var(--anatomy-hi);
+}
+
+.it[data-on] .iso-solid:not(.ss-cav) > .iso-top {
+  fill: var(--anatomy-lit-top);
+}
+
+.it {
+  cursor: default;
+}
+
+.ss-parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.ss-part {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--anatomy-muted);
+  font: 12.5px/1.3 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--ss-part-ring);
+  transition: color 160ms var(--anatomy-ease), background 160ms var(--anatomy-ease);
+}
+
+.ss-part:hover,
+.ss-part:focus-visible,
+.ss-part[data-on] {
+  color: var(--anatomy-strong);
+  background: var(--ss-part-hover);
+  outline: none;
+}
+
+.ss-num {
+  font-family: var(--anatomy-mono);
+  font-size: 10px;
+  color: var(--anatomy-muted);
+}
+
+.ss-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .ss .iso-plate {
+    padding: 48px 6px 70px;
+  }
+
+  .ss .iso-plate-corner[data-corner="readout"] {
+    bottom: 0;
+    right: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ss .iso-plate-corner[data-corner="hint"] {
+    bottom: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ss * {
+    transition: none !important;
+  }
+}
