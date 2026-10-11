@@ -1,21 +1,42 @@
 .ss {
-  --ss-part-ring: #ffffff10;
-  --ss-part-hover: #ffffff0a;
+  --ss-ring: #ffffff14;
+  --ss-hover: #ffffff0a;
   --ss-void: #050505;
   --ss-door: #0f0f0f;
+  --ss-nozzle: #2a1a10;
   --ss-throat: #000000;
+  --ss-nozzle-line: #6b4a30;
+  --ss-accent: #f0a04b;
+  --ss-lox: #5b8fe0;
+  --ss-ch4: #e39a3c;
+  --ss-tile-key: #3a3b40;
+  --ss-bronze-key: #86654b;
 }
 
 [data-theme="light"] .ss {
-  --ss-part-ring: #00000014;
-  --ss-part-hover: #0000000a;
+  --ss-ring: #00000014;
+  --ss-hover: #0000000a;
   --ss-void: #6f6f73;
   --ss-door: #efefec;
-  --ss-throat: #4a4a4e;
+  --ss-nozzle: #2e1d11;
+  --ss-throat: #0d0805;
+  --ss-nozzle-line: #b4825a;
+  --ss-accent: #c2580a;
+  --ss-lox: #3f74c9;
+  --ss-ch4: #e39a3c;
+  --ss-tile-key: #2a2b2f;
+  --ss-bronze-key: #86654b;
+}
+
+.ss-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 20px;
+  align-items: start;
 }
 
 .ss .iso-plate {
-  padding: 52px 24px 56px;
+  padding: 52px 24px 60px;
   overflow: hidden;
 }
 
@@ -25,6 +46,16 @@
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
+  cursor: default;
+}
+
+.ss-stage[data-zoomed] {
+  touch-action: none;
+  cursor: grab;
+}
+
+.ss-stage[data-dragging] {
+  cursor: grabbing;
 }
 
 .ss-stage:focus-visible {
@@ -32,106 +63,227 @@
   outline-offset: 6px;
 }
 
-.ss-cav {
-  --anatomy-paper: #0b0b0b;
-  --anatomy-top: #121212;
-  --anatomy-shade-0: #080808;
-  --anatomy-shade-1: #0a0a0a;
-  --anatomy-shade-2: #0c0c0c;
-  --anatomy-shade-3: #0e0e0e;
+.ss-controls {
+  position: absolute;
+  left: 20px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--anatomy-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--anatomy-muted);
 }
 
-[data-theme="light"] .ss-cav {
-  --anatomy-paper: #bdbdb9;
-  --anatomy-top: #cbcbc7;
-  --anatomy-shade-0: #a9a9a5;
-  --anatomy-shade-1: #b1b1ad;
-  --anatomy-shade-2: #b9b9b5;
-  --anatomy-shade-3: #c1c1bd;
+.ss-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--anatomy-face);
+  color: var(--anatomy-strong);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--ss-ring);
+  transition: background 160ms var(--anatomy-ease), transform 120ms var(--anatomy-ease);
 }
 
-.ss-in {
-  stroke: #262626;
+.ss-button[data-icon] {
+  padding: 0;
+  width: 28px;
+  font-size: 14px;
+  letter-spacing: 0;
 }
 
-[data-theme="light"] .ss-in {
-  stroke: #9a9a96;
+.ss-button:hover {
+  background: var(--ss-hover);
 }
 
-.ss-tile {
-  --anatomy-top: #0f0f0f;
-  --anatomy-shade-0: #070707;
-  --anatomy-shade-1: #090909;
-  --anatomy-shade-2: #0b0b0b;
-  --anatomy-shade-3: #0d0d0d;
-  --anatomy-faint: #1c1c1c;
+.ss-button:active {
+  transform: scale(0.96);
 }
 
-[data-theme="light"] .ss-tile {
-  --anatomy-top: #8e8e92;
-  --anatomy-shade-0: #6c6c70;
-  --anatomy-shade-1: #757579;
-  --anatomy-shade-2: #7e7e82;
-  --anatomy-shade-3: #87878b;
-  --anatomy-faint: #5c5c60;
+.ss-button:focus-visible {
+  outline: 1px solid var(--anatomy-muted);
+  outline-offset: 2px;
 }
 
-.ss-throat {
-  fill: var(--ss-throat);
-  stroke: none;
+.ss-zoom-level {
+  min-width: 36px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
-[data-theme="light"] .ss-bell-in {
-  stroke: #9a9a9e;
+.ss-hint {
+  margin-left: 8px;
 }
 
-.ss-void {
-  fill: var(--ss-void);
-  stroke: none;
+.ss-panel {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: 14px;
+  padding: 20px 20px 18px !important;
 }
 
-.ss-door {
-  fill: var(--ss-door);
-  stroke: none;
+.ss-panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
 }
 
-.ss-stage[data-focus] .it:not([data-on]) {
-  --anatomy-hi: var(--anatomy-mid);
-  --anatomy-mid: var(--anatomy-lo);
+.ss-panel-num {
+  font-family: var(--anatomy-mono);
+  font-size: 11px;
+  color: var(--ss-accent);
 }
 
-.it[data-on] {
-  --anatomy-hi: var(--anatomy-lit);
-  --anatomy-mid: var(--anatomy-hi);
+.ss-panel-title {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--anatomy-strong);
 }
 
-.it[data-on] .iso-solid:not(.ss-cav) > .iso-top {
-  fill: var(--anatomy-lit-top);
+.ss-lens-box {
+  position: relative;
+  border-radius: 6px;
+  background: var(--anatomy-page);
+  box-shadow: inset 0 0 0 1px var(--ss-ring);
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
 }
 
-.it {
-  cursor: default;
+.ss-lens {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.ss-extra {
+  display: none;
+  border-radius: 6px;
+  background: var(--anatomy-page);
+  box-shadow: inset 0 0 0 1px var(--ss-ring);
+  padding: 8px 8px 4px;
+}
+
+.ss-extra[data-on] {
+  display: block;
+}
+
+.ss-extra-figs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+}
+
+.ss-extra-fig {
+  display: grid;
+  gap: 2px;
+  justify-items: stretch;
+  margin: 0;
+  min-width: 0;
+}
+
+.ss-extra-fig figcaption {
+  text-align: center;
+}
+
+.ss-extra-fig[hidden] {
+  display: none;
+}
+
+.ss-extra-fig figcaption {
+  font-family: var(--anatomy-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--anatomy-muted);
+}
+
+.ss-extra svg {
+  max-height: 240px;
+  width: 100%;
+}
+
+.ss-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--anatomy-text);
+}
+
+.ss-specs {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.ss-specs dt {
+  color: var(--anatomy-muted);
+}
+
+.ss-specs dd {
+  margin: 0;
+  color: var(--anatomy-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.ss-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 12px;
+  color: var(--anatomy-muted);
+}
+
+.ss-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ss-key i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--key);
 }
 
 .ss-parts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 6px;
+  display: grid;
+  gap: 4px;
 }
 
 .ss-part {
-  display: inline-flex;
+  display: flex;
   align-items: baseline;
-  gap: 7px;
-  padding: 5px 10px;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 6px;
   background: transparent;
   color: var(--anatomy-muted);
   font: 12.5px/1.3 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-align: left;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px var(--ss-part-ring);
+  box-shadow: inset 0 0 0 1px var(--ss-ring);
   transition: color 160ms var(--anatomy-ease), background 160ms var(--anatomy-ease);
 }
 
@@ -139,14 +291,22 @@
 .ss-part:focus-visible,
 .ss-part[data-on] {
   color: var(--anatomy-strong);
-  background: var(--ss-part-hover);
+  background: var(--ss-hover);
   outline: none;
+}
+
+.ss-part[data-on] .ss-num {
+  color: var(--ss-accent);
 }
 
 .ss-num {
   font-family: var(--anatomy-mono);
   font-size: 10px;
   color: var(--anatomy-muted);
+}
+
+.ss-zoom-here {
+  justify-self: start;
 }
 
 .ss-live {
@@ -158,9 +318,330 @@
   white-space: nowrap;
 }
 
+/* materials: every colour is a token, light first, dark overrides */
+
+.ss-steel {
+  --anatomy-paper: #f4f6f8;
+  --anatomy-top: #f7f9fb;
+  --anatomy-shade-0: #cbd1d8;
+  --anatomy-shade-1: #d6dbe1;
+  --anatomy-shade-2: #e0e4e9;
+  --anatomy-shade-3: #eaedf1;
+}
+
+.ss-tile {
+  --anatomy-paper: #2a2b2f;
+  --anatomy-top: #3a3b40;
+  --anatomy-shade-0: #1c1d20;
+  --anatomy-shade-1: #232428;
+  --anatomy-shade-2: #2a2b30;
+  --anatomy-shade-3: #323338;
+  --anatomy-faint: #4d4e54;
+  --anatomy-lo: #5a5b61;
+}
+
+.ss-cav {
+  --anatomy-paper: #bdbdb9;
+  --anatomy-top: #cbcbc7;
+  --anatomy-shade-0: #a9a9a5;
+  --anatomy-shade-1: #b1b1ad;
+  --anatomy-shade-2: #b9b9b5;
+  --anatomy-shade-3: #c1c1bd;
+}
+
+.ss-cav-lox {
+  --anatomy-paper: #b9cfea;
+  --anatomy-top: #cadbf1;
+  --anatomy-shade-0: #a2bee3;
+  --anatomy-shade-1: #adc6e7;
+  --anatomy-shade-2: #b8ceeb;
+  --anatomy-shade-3: #c2d5ee;
+}
+
+.ss-cav-ch4 {
+  --anatomy-paper: #efd3a9;
+  --anatomy-top: #f5e1c1;
+  --anatomy-shade-0: #e2bb83;
+  --anatomy-shade-1: #e8c48f;
+  --anatomy-shade-2: #edcd9c;
+  --anatomy-shade-3: #f1d6aa;
+}
+
+.ss-in {
+  stroke: #9a9a96;
+}
+
+.ss-in-lox {
+  stroke: #7ea2d3;
+}
+
+.ss-in-ch4 {
+  stroke: #c79250;
+}
+
+.ss-methane {
+  --anatomy-paper: #f2b866;
+  --anatomy-top: #f8cf8f;
+  --anatomy-shade-0: #d98a2b;
+  --anatomy-shade-1: #e39a3c;
+  --anatomy-shade-2: #eaa94e;
+  --anatomy-shade-3: #f0b862;
+  --anatomy-hi: #8a4a0c;
+  --anatomy-mid: #b86d1e;
+  --anatomy-faint: #c98a3e;
+}
+
+.ss-oxygen {
+  --anatomy-paper: #7fa9e8;
+  --anatomy-top: #a6c4f2;
+  --anatomy-shade-0: #3f74c9;
+  --anatomy-shade-1: #4c82d3;
+  --anatomy-shade-2: #5a90dc;
+  --anatomy-shade-3: #6c9ee4;
+  --anatomy-hi: #18407f;
+  --anatomy-faint: #4a7bc4;
+}
+
+.ss-bronze {
+  --anatomy-paper: #8c6a4f;
+  --anatomy-top: #a88565;
+  --anatomy-shade-0: #5e4532;
+  --anatomy-shade-1: #6b4f3a;
+  --anatomy-shade-2: #785a42;
+  --anatomy-shade-3: #86654b;
+  --anatomy-hi: #2e1f14;
+  --anatomy-mid: #4a3626;
+  --anatomy-lo: #a07c5e;
+  --anatomy-faint: #9b7758;
+}
+
+.ss-niobium {
+  --anatomy-paper: #cfc6bb;
+  --anatomy-top: #ddd5cb;
+  --anatomy-shade-0: #a99d90;
+  --anatomy-shade-1: #b6ab9e;
+  --anatomy-shade-2: #c2b8ac;
+  --anatomy-shade-3: #cec5ba;
+  --anatomy-hi: #4a4036;
+  --anatomy-faint: #a99d90;
+}
+
+.ss-gunmetal {
+  --anatomy-paper: #9aa1aa;
+  --anatomy-top: #b4bac2;
+  --anatomy-shade-0: #6c737c;
+  --anatomy-shade-1: #78808a;
+  --anatomy-shade-2: #858d97;
+  --anatomy-shade-3: #929aa3;
+  --anatomy-hi: #2c3036;
+  --anatomy-mid: #4a5058;
+  --anatomy-faint: #6c737c;
+}
+
+.ss-fin {
+  --anatomy-paper: #b3b9c0;
+  --anatomy-top: #c6cbd1;
+  --anatomy-shade-0: #858c95;
+  --anatomy-shade-1: #9198a1;
+  --anatomy-shade-2: #9ea5ad;
+  --anatomy-shade-3: #abb1b8;
+  --anatomy-hi: #2f343a;
+  --anatomy-mid: #5a6068;
+  --anatomy-lo: #5a6068;
+}
+
+.ss-void {
+  fill: var(--ss-void);
+  stroke: none;
+}
+
+.ss-nozzle {
+  fill: var(--ss-nozzle);
+  stroke: none;
+}
+
+.ss-throat {
+  fill: var(--ss-throat);
+  stroke: none;
+}
+
+.ss-bell-in {
+  stroke: var(--ss-nozzle-line) !important;
+}
+
+.ss-door {
+  fill: var(--ss-door);
+  stroke: none;
+}
+
+[data-theme="dark"] .ss-steel,
+.iso:not([data-theme="light"]) .ss-steel {
+  --anatomy-paper: #16181b;
+  --anatomy-top: #1d2024;
+  --anatomy-shade-0: #111315;
+  --anatomy-shade-1: #141619;
+  --anatomy-shade-2: #17191c;
+  --anatomy-shade-3: #1a1d20;
+}
+
+.iso:not([data-theme="light"]) .ss-tile {
+  --anatomy-paper: #060607;
+  --anatomy-top: #0b0b0d;
+  --anatomy-shade-0: #040405;
+  --anatomy-shade-1: #060607;
+  --anatomy-shade-2: #08080a;
+  --anatomy-shade-3: #0a0a0c;
+  --anatomy-faint: #26272b;
+  --anatomy-lo: #303136;
+}
+
+.iso:not([data-theme="light"]) .ss-cav {
+  --anatomy-paper: #0b0b0b;
+  --anatomy-top: #121212;
+  --anatomy-shade-0: #080808;
+  --anatomy-shade-1: #0a0a0a;
+  --anatomy-shade-2: #0c0c0c;
+  --anatomy-shade-3: #0e0e0e;
+}
+
+.iso:not([data-theme="light"]) .ss-cav-lox {
+  --anatomy-paper: #0c1a2e;
+  --anatomy-top: #12243e;
+  --anatomy-shade-0: #08131f;
+  --anatomy-shade-1: #0a1726;
+  --anatomy-shade-2: #0c1b2d;
+  --anatomy-shade-3: #0e1f34;
+}
+
+.iso:not([data-theme="light"]) .ss-cav-ch4 {
+  --anatomy-paper: #2a1b09;
+  --anatomy-top: #36230c;
+  --anatomy-shade-0: #1d1306;
+  --anatomy-shade-1: #221607;
+  --anatomy-shade-2: #271a08;
+  --anatomy-shade-3: #2c1e0a;
+}
+
+.iso:not([data-theme="light"]) .ss-in {
+  stroke: #2a2a2a;
+}
+
+.iso:not([data-theme="light"]) .ss-in-lox {
+  stroke: #24456f;
+}
+
+.iso:not([data-theme="light"]) .ss-in-ch4 {
+  stroke: #6b4618;
+}
+
+.iso:not([data-theme="light"]) .ss-methane {
+  --anatomy-paper: #7a4a14;
+  --anatomy-top: #a8692a;
+  --anatomy-shade-0: #5a3510;
+  --anatomy-shade-1: #6a3f13;
+  --anatomy-shade-2: #7a4a17;
+  --anatomy-shade-3: #8c561c;
+  --anatomy-hi: #f0b56b;
+  --anatomy-mid: #c98a3e;
+  --anatomy-faint: #8c561c;
+}
+
+.iso:not([data-theme="light"]) .ss-oxygen {
+  --anatomy-paper: #1d3c6b;
+  --anatomy-top: #2f5ea3;
+  --anatomy-shade-0: #142b4f;
+  --anatomy-shade-1: #18335d;
+  --anatomy-shade-2: #1d3c6b;
+  --anatomy-shade-3: #23467c;
+  --anatomy-hi: #8db6ec;
+  --anatomy-faint: #23467c;
+}
+
+.iso:not([data-theme="light"]) .ss-bronze {
+  --anatomy-paper: #3a2a1e;
+  --anatomy-top: #5a4230;
+  --anatomy-shade-0: #261b13;
+  --anatomy-shade-1: #2e2117;
+  --anatomy-shade-2: #36271b;
+  --anatomy-shade-3: #3f2e20;
+  --anatomy-hi: #c79a72;
+  --anatomy-mid: #8a6a4e;
+  --anatomy-lo: #5a4230;
+  --anatomy-faint: #4a3626;
+}
+
+.iso:not([data-theme="light"]) .ss-niobium {
+  --anatomy-paper: #2a2723;
+  --anatomy-top: #3a3631;
+  --anatomy-shade-0: #1e1c19;
+  --anatomy-shade-1: #23211d;
+  --anatomy-shade-2: #282521;
+  --anatomy-shade-3: #2d2a25;
+  --anatomy-hi: #cfc6bb;
+  --anatomy-faint: #3a3631;
+}
+
+.iso:not([data-theme="light"]) .ss-gunmetal {
+  --anatomy-paper: #23272c;
+  --anatomy-top: #2f343a;
+  --anatomy-shade-0: #181b1f;
+  --anatomy-shade-1: #1c1f23;
+  --anatomy-shade-2: #202328;
+  --anatomy-shade-3: #24282d;
+  --anatomy-hi: #b4bac2;
+  --anatomy-mid: #6c737c;
+  --anatomy-faint: #2f343a;
+}
+
+.iso:not([data-theme="light"]) .ss-fin {
+  --anatomy-paper: #202327;
+  --anatomy-top: #2a2e33;
+  --anatomy-shade-0: #16181b;
+  --anatomy-shade-1: #1a1c20;
+  --anatomy-shade-2: #1e2125;
+  --anatomy-shade-3: #22252a;
+  --anatomy-hi: #c6cbd1;
+  --anatomy-mid: #6a717a;
+  --anatomy-lo: #4a5058;
+}
+
+/* selection, scoped to the main stage so the lens shows true colours */
+
+.ss-stage[data-focus] .it:not([data-on]) {
+  --anatomy-hi: var(--anatomy-mid);
+  --anatomy-mid: var(--anatomy-lo);
+}
+
+.ss-stage .it[data-on] .ss-steel > .iso-edge {
+  stroke: var(--ss-accent);
+}
+
+.ss-stage > svg,
+.ss-lens {
+  overflow: hidden !important;
+}
+
+@media (max-width: 1100px) {
+  .ss-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ss-panel {
+    position: static;
+  }
+
+  .ss-extra svg {
+    max-height: 200px;
+  }
+}
+
 @media (max-width: 640px) {
   .ss .iso-plate {
-    padding: 48px 6px 70px;
+    padding: 48px 6px 80px;
+  }
+
+  .ss-panel {
+    padding: 16px 14px !important;
   }
 
   .ss .iso-plate-corner[data-corner="readout"] {
@@ -171,8 +652,13 @@
     text-overflow: ellipsis;
   }
 
-  .ss .iso-plate-corner[data-corner="hint"] {
-    bottom: 22px;
+  .ss-controls {
+    left: 10px;
+    bottom: 28px;
+  }
+
+  .ss-hint {
+    display: none;
   }
 }
 
@@ -180,4 +666,8 @@
   .ss * {
     transition: none !important;
   }
+}
+
+.ss [hidden] {
+  display: none !important;
 }

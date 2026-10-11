@@ -2,11 +2,13 @@
 
 > Inspired by and built with **[wheresryan22/anatomy](https://github.com/wheresryan22/anatomy)**, a Claude Code skill that explains an idea by building it as a working isometric object. The drawing kit in `source/kit/` comes from that repository (MIT).
 
-An interactive isometric figure of the SpaceX Starship V3 full stack. Hover over it and it comes apart into the six sections it is stacked from, with cutaways that show how the tanks are arranged inside.
+An interactive isometric figure of the SpaceX Starship V3 full stack. Point at it and it comes apart into the six sections it is stacked from, then all 39 Raptor engines slide out of their skirts. Cutaway windows show how the tanks are arranged inside, a side panel shows each section close up with its numbers, and the drawing zooms so you can look at any part.
 
-![Starship V3 assembled on its stacking jig](preview-assembled.png)
+![Starship V3 assembled on its stacking jig, with the overview panel](preview-assembled.png)
 
-![The same stack taken apart into six sections](preview-apart.png)
+![Taken apart, with the ship section open in the side panel](preview-apart.png)
+
+![Zoomed in on the 33 booster engines after they slide out of the skirt](preview-engines.png)
 
 ## View it
 
@@ -14,22 +16,33 @@ An interactive isometric figure of the SpaceX Starship V3 full stack. Hover over
 
 To view it offline, download `starship-light.html` or `starship.html` and open it in a browser. Each page is a single self-contained file that makes no network requests.
 
-- **Hover** over the figure to take it apart; the section under the pointer is highlighted and the readout shows its numbers.
-- **Legend buttons**, or the **arrow keys** once the figure has focus, step through the sections. **Space** toggles apart/assembled, **Escape** puts it back together.
-- Left alone, it runs a slow tour of the sections. Under reduced motion it stays still.
+| To | Mouse | Touch | Keyboard (figure focused) |
+|---|---|---|---|
+| Pick a section | point at it, or use the list in the panel | tap it | arrow keys, Home, End |
+| Take it apart / put it together | moves apart while you point at it; **Take apart** keeps it apart | tap empty space | Space |
+| Zoom | scroll wheel, double-click, **+** / **−** | pinch | + and − |
+| Pan | drag | drag with one finger | — |
+| Frame the picked section | **Zoom the drawing here** in the panel | same | — |
+| Reset | **Reset** | **Reset** | 0, or Escape for everything |
+
+Left alone, it runs a slow tour through the sections, and the panel follows. Under reduced motion it stays still.
 
 ## What the drawing shows
 
 The stack lies on a long stacking jig: a base plate with two rails, a metre ruler (zero at the booster's engine plane) and cradles that slide along the rails.
 
+Colour marks what things are: blue for liquid-oxygen spaces, amber for methane (so the methane tube running through the blue oxygen tank stands out), black for the heat-shield tiles, bronze for the regeneratively cooled Raptor nozzles and pale grey for the Raptor Vacuum nozzle extensions.
+
 | # | Section | What to look for |
 |---|---|---|
-| 01 | 33 Raptors and aft skirt | 3 + 10 + 20 engine rings |
-| 02 | Booster oxygen tank | Cutaway showing the methane transfer tube running through it; aft dome with V3's metallic tiles |
-| 03 | Booster methane tank, grid fins, interstage | Common dome, three V3 grid fins, vented interstage kept on the booster |
-| 04 | Ship oxygen tank and six Raptors | 3 sea-level + 3 vacuum engines, aft flaps, cutaway with four downcomers |
-| 05 | Ship methane tank | Common dome with downcomer inlets |
-| 06 | Payload bay and nose | Payload door, forward flaps, cutaway of the landing header tanks in the nose |
+| 01 | 33 Raptors and aft skirt | 3 + 10 + 20 engine rings; apart, the engines slide out and leave the thrust puck and their mounts |
+| 02 | Booster oxygen tank | Cutaway with the methane transfer tube running through it; aft dome with V3's metallic tiles |
+| 03 | Booster methane tank, grid fins, interstage | Cutaway, common dome, three V3 grid fins, vented interstage kept on the booster |
+| 04 | Ship oxygen tank and six Raptors | 3 sea-level + 3 vacuum engines that slide out into the staging gap, aft flaps, cutaway with four downcomers |
+| 05 | Ship methane tank | Cutaway, common dome with downcomer inlets |
+| 06 | Payload bay and nose | Payload door, forward flaps, cutaway of the oxygen and methane header tanks in the nose |
+
+For sections 01 and 04 the panel also shows a single Raptor 3 and Raptor Vacuum, drawn larger, side by side at the same scale. The engines are simplified: nozzle, chamber, powerhead, two turbopumps and gimbal block.
 
 The ship lies belly up so the heat-shield tiles and flaps face the viewer.
 
@@ -43,12 +56,15 @@ The ship lies belly up so the heat-shield tiles and flaps face the viewer.
 | Booster propellant | 3,650 t | [Super Heavy, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Super_Heavy) |
 | Ship propellant | about 1,600 t | [Starship, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship) (no official V3 figure found) |
 | LOX / methane split | 3.6 : 1 by mass | Raptor's mixture ratio, applied to the totals above |
+| Raptor 3 mass | 1,525 kg | [Raptor, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Raptor) |
+| Heat shield | about 18,000 tiles, rated to 1,400 °C | [Starship spacecraft, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_(spacecraft)) |
+| Grid fins, interstage | 3 fins about 1.5× earlier ones; interstage built into the methane tank and kept | [Super Heavy, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Super_Heavy) |
 
 Caveats:
 
 - Sources disagree on some V3 numbers. An April 2026 review gives about 3,400 t of booster propellant and 280 t per Raptor 3; this figure uses the later May 2026 values.
 - The header tanks are drawn in the nose, where they have been since Ship 24; their V3 placement is not confirmed.
-- Proportions inside the tanks (dome depths, tube diameters, engine spacing) are approximate. Chines are left off because it is unclear whether V3 boosters keep them.
+- Proportions inside the tanks (dome depths, tube diameters, engine spacing) and the engine shapes are approximate. Chines are left off because it is unclear whether V3 boosters keep them.
 
 ## Rebuild
 
@@ -60,8 +76,8 @@ node source/build.mjs           # writes starship.html
 ```
 
 - `source/build.mjs` holds the model (every number above) and all the geometry.
-- `source/live.js` is the interaction: springs, the tour, pointer and keyboard.
-- `source/starship.css` holds the page styles and the theme tokens for cavities and tiles.
+- `source/live.js` is the interaction: springs, the tour, zoom and pan, the side panel, pointer, touch and keyboard.
+- `source/starship.css` holds the page styles and the colour tokens for every material, light and dark.
 - `source/kit/` is a copy of the drawing kit the build uses.
 
 ## Credits

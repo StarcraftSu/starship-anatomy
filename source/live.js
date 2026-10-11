@@ -1,65 +1,126 @@
 const D = __DATA__;
 const root = document.querySelector(".ss");
 const stage = root.querySelector(".ss-stage");
+const svg = stage.querySelector("svg");
 const readout = root.querySelector("[data-readout]");
-const hint = root.querySelector("[data-hint]");
 const live = document.querySelector("[data-live]");
-const partButtons = [...root.querySelectorAll(".ss-part")];
+const panel = root.querySelector(".ss-panel");
+const lensBox = panel.querySelector("[data-p-lens]");
+const lens = lensBox.querySelector("svg");
+const pNum = panel.querySelector("[data-p-num]");
+const pTitle = panel.querySelector("[data-p-title]");
+const pText = panel.querySelector("[data-p-text]");
+const pSpecs = panel.querySelector("[data-p-specs]");
+const pExtra = panel.querySelector("[data-p-extra]");
+const pFigs = [...panel.querySelectorAll("[data-fig]")];
+const zoomHere = panel.querySelector("[data-zoom-here]");
+const partButtons = [...panel.querySelectorAll(".ss-part")];
+const zoomLevel = root.querySelector("[data-zoom-level]");
+const apartButton = root.querySelector("[data-apart]");
 const still = matchMedia("(prefers-reduced-motion: reduce)");
 
-const nodes = [...stage.querySelectorAll(".it")].map((el) => ({ el, piece: el.dataset.piece, m: el.dataset.m.split(",").map(Number), shown: "" }));
 const IDS = D.order;
-const piece = Object.fromEntries(IDS.map((id) => [id, { x: 0, v: 0, target: 0, pending: null }]));
+const SUBS = Object.keys(D.subs);
+const SUB_OF = Object.fromEntries(SUBS.map((sub) => [D.subs[sub], sub]));
+const spring = Object.fromEntries([...IDS, ...SUBS].map((id) => [id, { x: 0, v: 0, target: 0, pending: null }]));
+const nodes = [...stage.querySelectorAll(".it, .it-sub")].map((el) => ({
+  el,
+  ride: el.dataset.ride || el.dataset.piece,
+  m: el.dataset.m.split(",").map(Number),
+  shown: "",
+}));
+const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 
 let clock = 0;
 let apart = false;
+let locked = false;
 let selected = null;
 let inside = false;
 let leaveTimer = 0;
 let idleTimer = 0;
 let touring = !still.matches;
-let tourClock = -1.2;
+let tourClock = -1.5;
 let visible = false;
 let frame = 0;
 let last = 0;
+
+const view = { z: 1, cx: D.W / 2, cy: D.H / 2 };
+const goal = { z: 1, cx: D.W / 2, cy: D.H / 2, on: false };
+const lensView = { x: 0, y: 0, w: D.W, h: D.H, ready: false };
 
 function say(text) {
   if (readout.textContent !== text) readout.textContent = text;
 }
 
-function describe() {
-  const text = selected ? `${D.pieces[selected].name}: ${D.pieces[selected].say}` : apart ? "Apart, six sections" : "Assembled";
+function announce(text) {
   if (stage.getAttribute("aria-valuetext") !== text) {
     stage.setAttribute("aria-valuetext", text);
     if (!touring && live) live.textContent = text;
   }
 }
 
+function describe() {
+  announce(selected ? `${D.sections[selected].title}: ${D.pieces[selected].say}` : apart ? "Apart: six sections and their engines" : "Assembled");
+}
+
 function setApart(on) {
   if (apart === on) return;
   apart = on;
-  const goal = on ? 1 : 0;
+  const value = on ? 1 : 0;
+  const order = on ? [...D.stagger, ...SUBS] : [...SUBS, ...[...D.stagger].reverse()];
   let index = 0;
-  for (const id of on ? D.stagger : [...D.stagger].reverse()) {
-    if (piece[id].target === goal) piece[id].pending = null;
-    else piece[id].pending = { value: goal, at: clock + (still.matches ? 0 : index++ * D.spring.stagger) };
+  for (const id of order) {
+    const state = spring[id];
+    if (state.target === value) {
+      state.pending = null;
+      continue;
+    }
+    const wait = on && D.subs[id] ? 0.35 : 0;
+    state.pending = { value, at: clock + (still.matches ? 0 : index++ * D.spring.stagger + wait) };
   }
+  apartButton.textContent = on ? "Put together" : "Take apart";
+  apartButton.setAttribute("aria-pressed", String(on));
   describe();
   run();
+}
+
+function fillPanel(id) {
+  const data = id ? D.sections[id] : D.overview;
+  pNum.textContent = id ? data.num : "V3";
+  pTitle.textContent = data.title;
+  pText.textContent = data.text;
+  pSpecs.replaceChildren(
+    ...data.specs.flatMap(([key, value]) => {
+      const dt = document.createElement("dt");
+      dt.textContent = key;
+      const dd = document.createElement("dd");
+      dd.textContent = value;
+      return [dt, dd];
+    }),
+  );
+  const figs = id ? data.figs : [];
+  pFigs.forEach((fig) => (fig.hidden = !figs.includes(fig.dataset.fig)));
+  if (figs.length) pExtra.setAttribute("data-on", "");
+  else pExtra.removeAttribute("data-on");
+  lensBox.hidden = !id;
+  zoomHere.hidden = !id;
+  if (id) lensView.ready = false;
 }
 
 function select(id) {
   if (selected === id) return;
   selected = id;
-  for (const node of nodes) {
-    if (id !== null && node.piece === id) node.el.setAttribute("data-on", "");
-    else node.el.removeAttribute("data-on");
+  for (const node of stage.querySelectorAll(".it")) {
+    if (id !== null && node.dataset.piece === id) node.setAttribute("data-on", "");
+    else node.removeAttribute("data-on");
   }
   if (id) stage.setAttribute("data-focus", "");
   else stage.removeAttribute("data-focus");
   partButtons.forEach((button) => (button.dataset.part === id ? button.setAttribute("data-on", "") : button.removeAttribute("data-on")));
   stage.setAttribute("aria-valuenow", String(id ? IDS.indexOf(id) + 1 : 0));
+  fillPanel(id);
   describe();
+  run();
 }
 
 function steer(state, dt, calm) {
@@ -70,7 +131,7 @@ function steer(state, dt, calm) {
   if (calm) {
     state.x = state.target;
     state.v = 0;
-    return false;
+    return state.pending !== null;
   }
   const { stiffness, damping, substeps } = D.spring;
   for (let index = 0; index < substeps; index++) {
@@ -88,7 +149,7 @@ function steer(state, dt, calm) {
 
 function place() {
   for (const node of nodes) {
-    const share = piece[node.piece].x;
+    const share = spring[node.ride].x;
     const tx = D.EX[0] * node.m[0] * share;
     const ty = D.EX[1] * node.m[0] * share;
     const text = Math.abs(share) < 1e-4 ? "" : `translate(${tx.toFixed(2)} ${ty.toFixed(2)})`;
@@ -100,34 +161,131 @@ function place() {
   }
 }
 
-const STEP = 2.2;
+function boxNow(id) {
+  const box = D.boxes[id];
+  const sub = SUB_OF[id] ? spring[SUB_OF[id]].x : 0;
+  const mixed = box.rest.map((value, index) => value + (box.pulled[index] - value) * clamp(sub, 0, 1));
+  const share = spring[id].x;
+  const dx = D.EX[0] * D.moves[id] * share;
+  const dy = D.EX[1] * D.moves[id] * share;
+  return [mixed[0] + dx, mixed[1] + dy, mixed[2] + dx, mixed[3] + dy];
+}
+
+function fitBox([x0, y0, x1, y1], aspect, pad) {
+  let w = (x1 - x0) * pad;
+  let h = (y1 - y0) * pad;
+  if (w / h > aspect) h = w / aspect;
+  else w = h * aspect;
+  return { x: (x0 + x1) / 2 - w / 2, y: (y0 + y1) / 2 - h / 2, w, h };
+}
+
+function stepLens(dt, calm) {
+  if (!selected || lensBox.hidden) return false;
+  const aspect = lensBox.clientWidth / Math.max(1, lensBox.clientHeight);
+  const target = fitBox(boxNow(selected), aspect || 1.6, 1.1);
+  const k = !lensView.ready || calm ? 1 : 1 - Math.exp(-dt * 9);
+  let moving = false;
+  for (const key of ["x", "y", "w", "h"]) {
+    const next = lensView[key] + (target[key] - lensView[key]) * k;
+    if (Math.abs(next - target[key]) > 0.05) moving = true;
+    lensView[key] = next;
+  }
+  lensView.ready = true;
+  lens.setAttribute("viewBox", `${lensView.x.toFixed(2)} ${lensView.y.toFixed(2)} ${lensView.w.toFixed(2)} ${lensView.h.toFixed(2)}`);
+  return moving;
+}
+
+function clampView(state) {
+  state.z = clamp(state.z, 1, 8);
+  const w = D.W / state.z;
+  const h = D.H / state.z;
+  state.cx = clamp(state.cx, w / 2, D.W - w / 2);
+  state.cy = clamp(state.cy, h / 2, D.H - h / 2);
+}
+
+function applyView() {
+  clampView(view);
+  const w = D.W / view.z;
+  const h = D.H / view.z;
+  svg.setAttribute("viewBox", `${(view.cx - w / 2).toFixed(2)} ${(view.cy - h / 2).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}`);
+  const zoomed = view.z > 1.01;
+  if (zoomed) stage.setAttribute("data-zoomed", "");
+  else stage.removeAttribute("data-zoomed");
+  zoomLevel.textContent = `${Math.round(view.z * 100)}%`;
+}
+
+function stepView(dt, calm) {
+  if (!goal.on) return false;
+  const k = calm ? 1 : 1 - Math.exp(-dt * 8);
+  view.z += (goal.z - view.z) * k;
+  view.cx += (goal.cx - view.cx) * k;
+  view.cy += (goal.cy - view.cy) * k;
+  const done = Math.abs(view.z - goal.z) < 0.002 && Math.abs(view.cx - goal.cx) < 0.05 && Math.abs(view.cy - goal.cy) < 0.05;
+  if (done) {
+    view.z = goal.z;
+    view.cx = goal.cx;
+    view.cy = goal.cy;
+    goal.on = false;
+  }
+  applyView();
+  return !done;
+}
+
+function glideTo(z, cx, cy) {
+  const state = { z, cx, cy };
+  clampView(state);
+  Object.assign(goal, state, { on: true });
+  run();
+}
+
+function pointIn(clientX, clientY) {
+  const rect = svg.getBoundingClientRect();
+  const px = (clientX - rect.left) / rect.width;
+  const py = (clientY - rect.top) / rect.height;
+  const w = D.W / view.z;
+  const h = D.H / view.z;
+  return { px, py, x: view.cx - w / 2 + px * w, y: view.cy - h / 2 + py * h };
+}
+
+function zoomAt(clientX, clientY, z) {
+  const point = pointIn(clientX, clientY);
+  const next = clamp(z, 1, 8);
+  goal.on = false;
+  view.z = next;
+  view.cx = point.x - (point.px - 0.5) * (D.W / next);
+  view.cy = point.y - (point.py - 0.5) * (D.H / next);
+  applyView();
+  if (next > 1.01) setApart(locked || apart);
+}
+
+const STEP = 2.6;
 function tourAt(time) {
   const from = 0.6;
-  const list = from + 1.4;
+  const list = from + 1.6;
   const end = list + IDS.length * STEP;
   if (time < from) return { apart: false, part: null };
   if (time < list) return { apart: true, part: null };
   if (time < end) return { apart: true, part: IDS[Math.floor((time - list) / STEP)] };
-  if (time < end + 4.5) return { apart: false, part: null };
+  if (time < end + 5) return { apart: false, part: null };
   return null;
 }
 
-function idleText() {
+function readoutText() {
   if (selected) return D.pieces[selected].say;
-  const moving = IDS.some((id) => Math.abs(piece[id].x - piece[id].target) > 0.002 || piece[id].pending);
+  const moving = [...IDS, ...SUBS].some((id) => Math.abs(spring[id].x - spring[id].target) > 0.002 || spring[id].pending);
   if (moving) return apart ? "taking it apart" : "stacking";
-  return apart ? "six sections · booster 1–3 · ship 4–6" : D.idle;
+  return apart ? "six sections · 39 engines out" : D.idle;
 }
 
-function quietTour() {
+function quiet() {
   touring = false;
   clearTimeout(idleTimer);
   idleTimer = setTimeout(() => {
-    if (inside || partButtons.some((button) => button.matches(":hover, :focus-visible"))) return quietTour();
+    if (inside || locked || view.z > 1.01 || partButtons.some((button) => button.matches(":hover, :focus-visible")) || panel.matches(":hover")) return quiet();
     touring = !still.matches;
     tourClock = -0.6;
     run();
-  }, 5200);
+  }, 9000);
 }
 
 function tick(now) {
@@ -146,9 +304,11 @@ function tick(now) {
     select(step.part);
   }
   let moving = false;
-  for (const id of IDS) if (steer(piece[id], dt, calm)) moving = true;
+  for (const id of [...IDS, ...SUBS]) if (steer(spring[id], dt, calm)) moving = true;
   place();
-  say(idleText());
+  if (stepView(dt, calm)) moving = true;
+  if (stepLens(dt, calm)) moving = true;
+  say(readoutText());
   frame = visible && (moving || touring) ? requestAnimationFrame(tick) : 0;
 }
 
@@ -164,70 +324,172 @@ new IntersectionObserver(
     visible = entries[entries.length - 1].isIntersecting;
     if (visible) run();
   },
-  { rootMargin: "120px 0px" },
-).observe(stage);
+  { rootMargin: "160px 0px" },
+).observe(root);
 
 function pieceAt(event) {
   const hit = document.elementFromPoint(event.clientX, event.clientY);
   const item = hit && hit.closest ? hit.closest(".it") : null;
-  return item ? item.dataset.piece : null;
+  return item && stage.contains(item) ? item.dataset.piece : null;
 }
 
+const pointers = new Map();
+let drag = null;
+let pinch = null;
+
+stage.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0 && event.pointerType === "mouse") return;
+  quiet();
+  pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: view.z };
+    drag = null;
+  } else {
+    drag = { id: event.pointerId, x: event.clientX, y: event.clientY, cx: view.cx, cy: view.cy, moved: false, type: event.pointerType };
+  }
+  try {
+    stage.setPointerCapture(event.pointerId);
+  } catch {}
+});
+
 stage.addEventListener("pointermove", (event) => {
-  if (event.pointerType === "touch") return;
+  if (pointers.has(event.pointerId)) pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (pinch && pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y);
+    zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, (pinch.z * d) / Math.max(1, pinch.d));
+    return;
+  }
+  if (drag && drag.id === event.pointerId) {
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) > 4) drag.moved = true;
+    if (drag.moved && view.z > 1.01) {
+      const rect = svg.getBoundingClientRect();
+      goal.on = false;
+      view.cx = drag.cx - (dx / rect.width) * (D.W / view.z);
+      view.cy = drag.cy - (dy / rect.height) * (D.H / view.z);
+      applyView();
+      stage.setAttribute("data-dragging", "");
+    }
+    return;
+  }
+  if (event.pointerType !== "mouse") return;
   inside = true;
   clearTimeout(leaveTimer);
-  quietTour();
-  setApart(true);
-  select(pieceAt(event));
+  quiet();
+  const id = pieceAt(event);
+  if (id) select(id);
+  if (view.z <= 1.01 && !locked) setApart(true);
   run();
 });
 
-stage.addEventListener("pointerleave", () => {
+function release(event) {
+  pointers.delete(event.pointerId);
+  if (pointers.size < 2) pinch = null;
+  if (drag && drag.id === event.pointerId) {
+    if (!drag.moved) {
+      const id = pieceAt(event);
+      if (drag.type !== "mouse") {
+        if (id) {
+          select(id);
+          setApart(true);
+        } else {
+          select(null);
+          if (!locked) setApart(!apart);
+        }
+      } else if (!id) select(null);
+    }
+    drag = null;
+    stage.removeAttribute("data-dragging");
+  }
+}
+stage.addEventListener("pointerup", release);
+stage.addEventListener("pointercancel", release);
+
+stage.addEventListener("pointerleave", (event) => {
+  if (event.pointerType !== "mouse") return;
   inside = false;
   clearTimeout(leaveTimer);
   leaveTimer = setTimeout(() => {
-    if (inside) return;
-    select(null);
+    if (inside || locked || view.z > 1.01) return;
     setApart(false);
-  }, 300);
+  }, 500);
 });
 
-stage.addEventListener("pointerdown", (event) => {
-  if (event.pointerType !== "touch") return;
-  quietTour();
-  const id = pieceAt(event);
-  if (!id) {
-    select(null);
-    setApart(!apart);
-  } else {
-    setApart(true);
-    select(selected === id ? null : id);
-  }
-  run();
+stage.addEventListener(
+  "wheel",
+  (event) => {
+    event.preventDefault();
+    quiet();
+    const factor = Math.exp(-event.deltaY * (event.ctrlKey ? 0.012 : 0.0022));
+    zoomAt(event.clientX, event.clientY, view.z * factor);
+    run();
+  },
+  { passive: false },
+);
+
+stage.addEventListener("dblclick", (event) => {
+  quiet();
+  const point = pointIn(event.clientX, event.clientY);
+  const z = view.z * 2 > 8 ? 1 : view.z * 2;
+  glideTo(z, point.x, point.y);
+});
+
+root.querySelectorAll("[data-zoom]").forEach((button) =>
+  button.addEventListener("click", () => {
+    quiet();
+    const kind = button.dataset.zoom;
+    if (kind === "reset") {
+      glideTo(1, D.W / 2, D.H / 2);
+      return;
+    }
+    glideTo(view.z * (kind === "in" ? 1.6 : 1 / 1.6), view.cx, view.cy);
+  }),
+);
+
+apartButton.addEventListener("click", () => {
+  quiet();
+  locked = !apart;
+  setApart(!apart);
+});
+
+function boxApart(id) {
+  const box = D.boxes[id].pulled;
+  const dx = D.EX[0] * D.moves[id];
+  const dy = D.EX[1] * D.moves[id];
+  return [box[0] + dx, box[1] + dy, box[2] + dx, box[3] + dy];
+}
+
+zoomHere.addEventListener("click", () => {
+  if (!selected) return;
+  quiet();
+  locked = true;
+  setApart(true);
+  const rect = svg.getBoundingClientRect();
+  const box = fitBox(boxApart(selected), rect.width / rect.height, 1.12);
+  glideTo(D.W / box.w, box.x + box.w / 2, box.y + box.h / 2);
 });
 
 partButtons.forEach((button) => {
   const show = () => {
     clearTimeout(leaveTimer);
-    quietTour();
-    setApart(true);
+    quiet();
     select(button.dataset.part);
+    if (view.z <= 1.01) setApart(true);
     run();
-  };
-  const hide = () => {
-    clearTimeout(leaveTimer);
-    leaveTimer = setTimeout(() => {
-      if (inside || partButtons.some((other) => other.matches(":hover, :focus-visible"))) return;
-      select(null);
-      setApart(false);
-    }, 300);
   };
   button.addEventListener("pointerenter", show);
   button.addEventListener("focus", show);
-  button.addEventListener("pointerleave", hide);
-  button.addEventListener("blur", hide);
   button.addEventListener("click", show);
+  button.addEventListener("pointerleave", () => {
+    clearTimeout(leaveTimer);
+    leaveTimer = setTimeout(() => {
+      if (inside || locked || view.z > 1.01 || partButtons.some((other) => other.matches(":hover, :focus-visible"))) return;
+      setApart(false);
+    }, 600);
+  });
 });
 
 stage.addEventListener("keydown", (event) => {
@@ -237,32 +499,48 @@ stage.addEventListener("keydown", (event) => {
   else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = Math.max(0, index - 1);
   else if (event.key === "Home") next = 0;
   else if (event.key === "End") next = IDS.length - 1;
-  else if (event.key === "Escape") {
+  else if (event.key === "+" || event.key === "=") {
     event.preventDefault();
-    quietTour();
+    quiet();
+    glideTo(view.z * 1.6, view.cx, view.cy);
+    return;
+  } else if (event.key === "-" || event.key === "_") {
+    event.preventDefault();
+    quiet();
+    glideTo(view.z / 1.6, view.cx, view.cy);
+    return;
+  } else if (event.key === "0") {
+    quiet();
+    glideTo(1, D.W / 2, D.H / 2);
+    return;
+  } else if (event.key === "Escape") {
+    event.preventDefault();
+    quiet();
+    locked = false;
     select(null);
     setApart(false);
-    run();
+    glideTo(1, D.W / 2, D.H / 2);
     return;
   } else if (event.key === " " || event.key === "Enter") {
     event.preventDefault();
-    quietTour();
+    quiet();
+    locked = !apart;
     setApart(!apart);
-    if (!apart) select(null);
-    run();
     return;
   }
   if (next === null) return;
   event.preventDefault();
-  quietTour();
-  setApart(true);
+  quiet();
   select(IDS[next]);
+  if (view.z <= 1.01) setApart(true);
+});
+
+window.addEventListener("resize", () => {
+  lensView.ready = false;
   run();
 });
 
-const narrow = matchMedia("(hover: none), (max-width: 480px)");
-const wording = () => hint && (hint.textContent = narrow.matches ? "Tap to take it apart" : "Hover to take it apart");
-wording();
-narrow.addEventListener("change", wording);
+if (still.matches) touring = false;
+applyView();
 place();
-say(idleText());
+say(readoutText());
