@@ -1,5 +1,7 @@
 # Starship V3, taken apart
 
+> Inspired by and built with **[wheresryan22/anatomy](https://github.com/wheresryan22/anatomy)**, a Claude Code skill that explains an idea by building it as a working isometric object. The drawing kit in `source/kit/` comes from that repository (MIT).
+
 An interactive isometric figure of the SpaceX Starship V3 full stack. Hover over it and it comes apart into the six sections it is stacked from, with cutaways that show how the tanks are arranged inside.
 
 ![Starship V3 assembled on its stacking jig](preview-assembled.png)
