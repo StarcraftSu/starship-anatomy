@@ -10,7 +10,9 @@ An interactive isometric figure of the SpaceX Starship V3 full stack. Hover over
 
 ## View it
 
-Download `starship-light.html` (light theme) or `starship.html` (dark theme) and open it in a browser. Each page is a single self-contained file that makes no network requests.
+**Live: https://starcraftsu.github.io/starship-anatomy/** — follows your system's light or dark setting. Or go straight to the [light](https://starcraftsu.github.io/starship-anatomy/starship-light.html) or [dark](https://starcraftsu.github.io/starship-anatomy/starship.html) page.
+
+To view it offline, download `starship-light.html` or `starship.html` and open it in a browser. Each page is a single self-contained file that makes no network requests.
 
 - **Hover** over the figure to take it apart; the section under the pointer is highlighted and the readout shows its numbers.
 - **Legend buttons**, or the **arrow keys** once the figure has focus, step through the sections. **Space** toggles apart/assembled, **Escape** puts it back together.
