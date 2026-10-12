@@ -15,7 +15,13 @@ const ELEVATION = 20;
 const R3 = { thrust: 250, vac: 275, pc: 330, pcTest: 350, mass: 1525, ispSL: 350, ispVac: 380, mix: 3.6, length: 3.1, width: 1.3 };
 
 const EXIT_Z = 0.3;
-const BELL = { exit: 0.65, throat: 0.2, length: 1.65, converge: 0.2, chamber: 0.31, chamberLen: 0.5 };
+// Proportions: 3.1 m long overall; the nozzle exit 1.2 m across (twenty of them must fit round a 9 m booster)
+// and the throat sized for the sea-level expansion ratio of 34.34, so exit radius = throat radius × √34.34.
+const EXPANSION = 34.34;
+const BELL = { exit: 0.6, throat: 0.6 / Math.sqrt(EXPANSION), length: 1.6, converge: 0.15, chamber: 0.24, chamberLen: 0.35 };
+const OXP = { pumpR: 0.22, turbineR: 0.2, pbR: 0.17 };
+const FP = { pumpR: 0.19, turbineR: 0.16, pbR: 0.13 };
+const INJ = { r: 0.28, flange: 0.31, top: 0.23 };
 const TOP_S = BELL.length + BELL.converge + BELL.chamberLen;
 const bellR = (h) => {
   const x = Math.min(1, Math.max(0, 1 - h / BELL.length));
@@ -32,11 +38,11 @@ const bodyR = (h) => {
 const bodySlope = (h) => (bodyR(h + 0.005) - bodyR(h - 0.005)) / 0.01;
 
 const SIDE = [1, 0, 0];
-const CH4_AT = 0.68;
+const CH4_AT = 0.5;
 const MOVES = {
   injector: [0, 0, 0.5],
   ox: [-1.5, 0, 0.55],
-  gimbal: [0, 0, 1.0],
+  gimbal: [0, 0, 0.8],
   ch4: [0.95, 0, 0.55],
 };
 const ORDER = ["chamber", "injector", "ox", "gimbal", "ch4"];
@@ -44,18 +50,18 @@ const STAGGER = ["gimbal", "ox", "ch4", "injector"];
 
 // Heights above the nozzle exit plane, assembled.
 const Z = {
-  injector: [TOP_S, TOP_S + 0.25],
-  opb: [TOP_S + 0.25, TOP_S + 0.57],
-  oTurbine: [TOP_S + 0.57, TOP_S + 0.79],
-  oNeck: [TOP_S + 0.79, TOP_S + 0.87],
-  oPump: [TOP_S + 0.87, TOP_S + 1.15],
-  oInlet: [TOP_S + 1.15, TOP_S + 1.21],
-  gimbal: [TOP_S + 1.21, TOP_S + 1.49],
-  fpb: [TOP_S - 0.25, TOP_S + 0.13],
-  fTurbine: [TOP_S + 0.13, TOP_S + 0.33],
-  fNeck: [TOP_S + 0.33, TOP_S + 0.4],
-  fPump: [TOP_S + 0.4, TOP_S + 0.67],
-  fInlet: [TOP_S + 0.67, TOP_S + 0.73],
+  injector: [TOP_S, TOP_S + 0.18],
+  opb: [TOP_S + 0.18, TOP_S + 0.38],
+  oTurbine: [TOP_S + 0.38, TOP_S + 0.54],
+  oNeck: [TOP_S + 0.54, TOP_S + 0.59],
+  oPump: [TOP_S + 0.59, TOP_S + 0.79],
+  oInlet: [TOP_S + 0.79, TOP_S + 0.83],
+  gimbal: [TOP_S + 0.83, TOP_S + 1.0],
+  fpb: [TOP_S - 0.22, TOP_S + 0.06],
+  fTurbine: [TOP_S + 0.06, TOP_S + 0.22],
+  fNeck: [TOP_S + 0.22, TOP_S + 0.27],
+  fPump: [TOP_S + 0.27, TOP_S + 0.5],
+  fInlet: [TOP_S + 0.5, TOP_S + 0.55],
 };
 
 export function buildRaptor({ esc }) {
@@ -66,8 +72,8 @@ export function buildRaptor({ esc }) {
   const DECK = { x: -320, y: -150, w: 640, d: 300, r: 12 };
   const DECK_H = 16;
   box(-3.2, -1.5, -0.24, 3.2, 1.5, 0);
-  box(-0.7, -0.7, 0, 0.7, 0.7, EXIT_Z + TOP_S + 1.49 + 1.05);
-  box(-2.8, -0.2, 0, 2.9, 0.2, 4.9);
+  box(-0.7, -0.7, 0, 0.7, 0.7, EXIT_Z + Z.gimbal[1] + MOVES.gimbal[2] + 0.08);
+  box(-2.8, -0.2, 0, 2.9, 0.2, 4.25);
   const P = k.fitProjection(fitPoints, W, H, { pad: 34, azimuth: AZIMUTH, elevation: ELEVATION });
   const V = G.viewOf(P);
   const at = (p) => k.iso(p, P);
@@ -143,10 +149,10 @@ export function buildRaptor({ esc }) {
   // Main injector: a flanged head with a ring of bolts on top of the chamber.
   {
     const [z0, z1] = Z.injector;
-    const flange = S(G.ringBand(z0 * U, (z0 + 0.06) * U, 0.2 * U, 0.41 * U, AX, P), metal());
-    const ports = Ln(G.arcOf(AX, (z0 + 0.15) * U, 0.36 * U, P), { tone: "faint" });
-    const head = S(G.lathe([[(z0 + 0.06) * U, 0], [(z0 + 0.06) * U, 0.36 * U], [(z1 - 0.06) * U, 0.36 * U, 1], [z1 * U, 0.3 * U, 1], [z1 * U, 0]], AX, P, { rims: "last" }), { ...metal(), inner: ports });
-    const bolts = Dots(G.dotsOf(AX, (z0 + 0.06) * U, 0.385 * U, 16, P, { least: 0.05 }), { size: 0.55, tone: "mid" });
+    const flange = S(G.ringBand(z0 * U, (z0 + 0.05) * U, (BELL.chamber - 0.04) * U, INJ.flange * U, AX, P), metal());
+    const ports = Ln(G.arcOf(AX, (z0 + 0.11) * U, INJ.r * U, P), { tone: "faint" });
+    const head = S(G.lathe([[(z0 + 0.05) * U, 0], [(z0 + 0.05) * U, INJ.r * U], [(z1 - 0.05) * U, INJ.r * U, 1], [z1 * U, INJ.top * U, 1], [z1 * U, 0]], AX, P, { rims: "last" }), { ...metal(), inner: ports });
+    const bolts = Dots(G.dotsOf(AX, (z0 + 0.05) * U, (INJ.flange - 0.017) * U, 16, P, { least: 0.05 }), { size: 0.55, tone: "mid" });
     pieces.injector.push(org("injector", flange + bolts + head));
   }
 
@@ -167,14 +173,14 @@ export function buildRaptor({ esc }) {
     parts.push(org(`pump ${side}`, pump + volute + inlet));
     return parts.join("");
   }
-  pieces.ox.push(turbopump(AX, { pb: Z.opb, turbine: Z.oTurbine, neck: Z.oNeck, pump: Z.oPump, inlet: Z.oInlet }, { pumpR: 0.27, turbineR: 0.25, pbR: 0.2, side: "ox" }));
-  pieces.ch4.push(turbopump(FX, { pb: Z.fpb, turbine: Z.fTurbine, neck: Z.fNeck, pump: Z.fPump, inlet: Z.fInlet }, { pumpR: 0.24, turbineR: 0.22, pbR: 0.17, side: "ch4" }));
+  pieces.ox.push(turbopump(AX, { pb: Z.opb, turbine: Z.oTurbine, neck: Z.oNeck, pump: Z.oPump, inlet: Z.oInlet }, { ...OXP, side: "ox" }));
+  pieces.ch4.push(turbopump(FX, { pb: Z.fpb, turbine: Z.fTurbine, neck: Z.fNeck, pump: Z.fPump, inlet: Z.fInlet }, { ...FP, side: "ch4" }));
 
   // Gimbal and thrust puck on top: the engine's one mount to the vehicle.
   {
     const [g0, g1] = Z.gimbal;
-    const knuckle = S(G.sphereOf(G.pointOf(AX, (g0 + 0.07) * U, 0, 0), 0.1 * U, P), metal());
-    const puck = S(G.disc((g0 + 0.12) * U, g1 * U, 0.22 * U, AX, P), metal());
+    const knuckle = S(G.sphereOf(G.pointOf(AX, (g0 + 0.045) * U, 0, 0), 0.07 * U, P), metal());
+    const puck = S(G.disc((g0 + 0.075) * U, g1 * U, 0.2 * U, AX, P), metal());
     const lugs = Dots(G.dotsOf(AX, g1 * U, 0.17 * U, 8, P, { all: true }), { size: 0.55, tone: "mid" });
     pieces.gimbal.push(org("gimbal", knuckle + puck + lugs));
   }
@@ -210,8 +216,8 @@ export function buildRaptor({ esc }) {
     const cap = S(G.ringBand((reach - 0.04) * U, reach * U, 0.07 * U, 0.12 * U, armF, P), { tone: "mid" });
     return foot + run + valve + arm + cap;
   };
-  const LOX_PIPE = { x: -2.6, top: 4.75, reach: 0.15 };
-  const CH4_PIPE = { x: 2.7, top: 4.25, reach: 0.15 };
+  const LOX_PIPE = { x: -2.6, top: 4.1, reach: 0.15 };
+  const CH4_PIPE = { x: 2.7, top: 3.85, reach: 0.15 };
   const backPipe = pipe(LOX_PIPE.x, LOX_PIPE.top, LOX_PIPE.reach, "ss-oxygen");
   const frontPipe = pipe(CH4_PIPE.x, CH4_PIPE.top, CH4_PIPE.reach, "ss-methane");
 
@@ -223,13 +229,13 @@ export function buildRaptor({ esc }) {
   const ROUTES = [
     { id: "lox-in", kind: "lox", step: 1, points: [[LOX_PIPE.x + LOX_PIPE.reach, 0, LOX_PIPE.top], [oxX, 0, LOX_PIPE.top], [oxX, 0, zA(Z.oInlet[1], "ox")]] },
     { id: "ch4-in", kind: "ch4", step: 1, points: [[CH4_PIPE.x - CH4_PIPE.reach, 0, CH4_PIPE.top], [fX, 0, CH4_PIPE.top], [fX, 0, zA(Z.fInlet[1], "ch4")]] },
-    { id: "ch4-jacket", kind: "ch4", step: 2, from: "ch4", to: "chamber", points: [[fX + 0.3, 0, zA(mid(...Z.fPump), "ch4")], [fX + 0.55, 0, zA(mid(...Z.fPump), "ch4")], [fX + 0.55, 0, EXIT_Z + 0.46], [bellR(0.46) + 0.07, 0, EXIT_Z + 0.46]] },
-    { id: "lox-opb", kind: "lox", step: 3, from: "ox", to: "ox", points: [[oxX - 0.33, 0, zA(mid(...Z.oPump), "ox")], [oxX - 0.55, 0, zA(mid(...Z.oPump), "ox")], [oxX - 0.55, 0, zA(mid(...Z.opb), "ox")], [oxX - 0.2, 0, zA(mid(...Z.opb), "ox")]] },
-    { id: "ch4-fpb", kind: "ch4", step: 3, from: "chamber", to: "ch4", points: [[BELL.chamber + 0.06, 0, EXIT_Z + TOP_S - 0.1], [fX, 0, EXIT_Z + TOP_S - 0.1], [fX, 0, zA(Z.fpb[0], "ch4")]] },
-    { id: "lox-fpb", kind: "lox", step: 3, thin: true, from: "ox", to: "ch4", points: [[oxX, -0.27, zA(mid(...Z.oPump), "ox")], [oxX, -0.7, zA(mid(...Z.oPump), "ox")], [fX, -0.7, zA(mid(...Z.oPump), "ox")], [fX, -0.7, zA(mid(...Z.fpb), "ch4")], [fX, -0.17, zA(mid(...Z.fpb), "ch4")]] },
-    { id: "ch4-opb", kind: "ch4", step: 3, thin: true, from: "chamber", to: "ox", points: [[-(BELL.chamber + 0.06), 0, EXIT_Z + TOP_S - 0.1], [oxX, 0, EXIT_Z + TOP_S - 0.1], [oxX, 0, zA(Z.opb[0], "ox")]] },
-    { id: "oxgas", kind: "oxgas", step: 4, from: "ox", to: "injector", points: [[oxX + 0.25, 0, zA(mid(...Z.oTurbine), "ox")], [-0.22, 0, zA(mid(...Z.oTurbine), "ox")], [-0.22, 0, zA(Z.injector[1], "injector")]] },
-    { id: "fuelgas", kind: "fuelgas", step: 4, from: "ch4", to: "injector", points: [[fX - 0.22, 0, zA(mid(...Z.fTurbine), "ch4")], [0.55, 0, zA(mid(...Z.fTurbine), "ch4")], [0.55, 0, zA(mid(...Z.injector), "injector")], [0.36, 0, zA(mid(...Z.injector), "injector")]] },
+    { id: "ch4-jacket", kind: "ch4", step: 2, from: "ch4", to: "chamber", points: [[fX + (FP.pumpR + 0.06), 0, zA(mid(...Z.fPump), "ch4")], [fX + 0.55, 0, zA(mid(...Z.fPump), "ch4")], [fX + 0.55, 0, EXIT_Z + 0.46], [bellR(0.46) + 0.03, 0, EXIT_Z + 0.46]] },
+    { id: "lox-opb", kind: "lox", step: 3, from: "ox", to: "ox", points: [[oxX - (OXP.pumpR + 0.06), 0, zA(mid(...Z.oPump), "ox")], [oxX - 0.55, 0, zA(mid(...Z.oPump), "ox")], [oxX - 0.55, 0, zA(mid(...Z.opb), "ox")], [oxX - OXP.pbR, 0, zA(mid(...Z.opb), "ox")]] },
+    { id: "ch4-fpb", kind: "ch4", step: 3, from: "chamber", to: "ch4", points: [[BELL.chamber + 0.03, 0, EXIT_Z + TOP_S - 0.1], [fX, 0, EXIT_Z + TOP_S - 0.1], [fX, 0, zA(Z.fpb[0], "ch4")]] },
+    { id: "lox-fpb", kind: "lox", step: 3, thin: true, from: "ox", to: "ch4", points: [[oxX, -(OXP.pumpR + 0.06), zA(mid(...Z.oPump), "ox")], [oxX, -0.7, zA(mid(...Z.oPump), "ox")], [fX, -0.7, zA(mid(...Z.oPump), "ox")], [fX, -0.7, zA(mid(...Z.fpb), "ch4")], [fX, -FP.pbR, zA(mid(...Z.fpb), "ch4")]] },
+    { id: "ch4-opb", kind: "ch4", step: 3, thin: true, from: "chamber", to: "ox", points: [[-(BELL.chamber + 0.03), 0, EXIT_Z + TOP_S - 0.1], [oxX, 0, EXIT_Z + TOP_S - 0.1], [oxX, 0, zA(Z.opb[0], "ox")]] },
+    { id: "oxgas", kind: "oxgas", step: 4, from: "ox", to: "injector", points: [[oxX + OXP.turbineR, 0, zA(mid(...Z.oTurbine), "ox")], [-0.14, 0, zA(mid(...Z.oTurbine), "ox")], [-0.14, 0, zA(Z.injector[1], "injector")]] },
+    { id: "fuelgas", kind: "fuelgas", step: 4, from: "ch4", to: "injector", points: [[fX - FP.turbineR, 0, zA(mid(...Z.fTurbine), "ch4")], [0.5, 0, zA(mid(...Z.fTurbine), "ch4")], [0.5, 0, zA(mid(...Z.injector), "injector")], [INJ.r, 0, zA(mid(...Z.injector), "injector")]] },
     { id: "exhaust", kind: "hot", step: 5, points: [[0, 0, EXIT_Z + TOP_S - 0.2], [0, 0, EXIT_Z + 0.05]] },
   ];
   // Methane climbing the cooling channels: a few meridians on the near side of the jacket.
@@ -346,7 +352,7 @@ const TEXT = {
       keyOxgas: "Oxygen-rich gas",
       keyFuelgas: "Methane-rich gas",
       keyHot: "Burning gas",
-      notes: `Raptor 3 is ${R3.length} m long and ${R3.width} m across and weighs ${R3.mass.toLocaleString("en-US")} kg. Assembled it shows almost no pipes: SpaceX moved most of Raptor 2's plumbing and sensors into the engine's main structure. Taken apart on its stand, the oxygen turbopump and its preburner move to the left, the methane pair to the right, and the paths between them are drawn in colour: liquid oxygen blue, methane amber, oxygen-rich gas violet, methane-rich gas red. The routes are a diagram of the cycle, not the real internal passages, and the parts are simplified. Numbers: ${R3.thrust} tf at sea level and ${R3.vac} tf in vacuum (SpaceX, May 2026), ${R3.pc} bar in service and ${R3.pcTest} bar reached in testing, specific impulse ${R3.ispSL} s at sea level and ${R3.ispVac} s for the vacuum version, as listed on Wikipedia.`,
+      notes: `Raptor 3 is ${R3.length} m long and weighs ${R3.mass.toLocaleString("en-US")} kg. Wikipedia lists it as ${R3.width} m across; the nozzle here is drawn 1.2 m across at the exit, because twenty of them have to fit in a ring around the 9 m booster, and its throat is sized for the sea-level expansion ratio of 34.34, so the exit is about 5.9 times the throat's width. Assembled it shows almost no pipes: SpaceX moved most of Raptor 2's plumbing and sensors into the engine's main structure. SpaceX has not published Raptor 3's internal layout, so the arrangement inside (the oxygen turbopump and its preburner on the engine's axis, the methane pair beside it) follows the usual full-flow layout and is approximate, and the parts are simplified to turned shapes. The coloured routes are a diagram of the cycle, not the real passages: liquid oxygen blue, methane amber, oxygen-rich gas violet, methane-rich gas red. Numbers: ${R3.thrust} tf at sea level and ${R3.vac} tf in vacuum (SpaceX, May 2026), ${R3.pc} bar in service and ${R3.pcTest} bar reached in testing, specific impulse ${R3.ispSL} s at sea level and ${R3.ispVac} s for the vacuum version, as listed on Wikipedia.`,
       label: "A Raptor 3 rocket engine standing on its nozzle on an engine stand, with a blue oxygen standpipe on the left and an amber methane standpipe on the right. Taken apart, the oxygen turbopump and preburner sit to the left, the methane turbopump and preburner to the right, the injector, gimbal and the chamber with its bronze nozzle in the middle, and coloured paths show how the propellants flow between them.",
     },
     overview: {
@@ -416,7 +422,7 @@ const TEXT = {
       keyOxgas: "富氧燃气",
       keyFuelgas: "富燃燃气",
       keyHot: "燃烧中的燃气",
-      notes: `猛禽 3 长 ${R3.length} 米、直径 ${R3.width} 米，重 ${R3.mass.toLocaleString("en-US")} 千克。装好时几乎看不到管子：SpaceX 把猛禽 2 的大部分管路和传感器都做进了发动机主体。在支架上拆开后，氧涡轮泵和它的预燃室移到左边，甲烷那一对移到右边，它们之间的通路用颜色画出：液氧蓝色、甲烷琥珀色、富氧燃气紫色、富燃燃气红色。这些路线是循环原理的示意，并不是真实的内部通道，零件也做了简化。数字：海平面推力 ${R3.thrust} 吨力、真空 ${R3.vac} 吨力（SpaceX，2026 年 5 月），燃烧室压力服役中 ${R3.pc} bar、测试中达到 ${R3.pcTest} bar，比冲海平面 ${R3.ispSL} 秒、真空版 ${R3.ispVac} 秒，均取自维基百科。`,
+      notes: `猛禽 3 长 ${R3.length} 米，重 ${R3.mass.toLocaleString("en-US")} 千克。维基百科写的直径是 ${R3.width} 米；这里喷管出口画成 1.2 米，因为助推器要在直径 9 米的箭体上排一圈 20 台，再大就放不下；喉部按海平面版 34.34 的扩张比来定，所以喷口宽度约是喉部的 5.9 倍。装好时几乎看不到管子：SpaceX 把猛禽 2 的大部分管路和传感器都做进了发动机主体。SpaceX 没有公开猛禽 3 的内部布局，所以内部的排布（氧涡轮泵和它的预燃室在发动机轴线上，甲烷那一对在旁边）是按常见的全流量布局画的近似，零件也简化成了回转体。彩色路线是循环原理的示意，不是真实的内部通道：液氧蓝色、甲烷琥珀色、富氧燃气紫色、富燃燃气红色。数字：海平面推力 ${R3.thrust} 吨力、真空 ${R3.vac} 吨力（SpaceX，2026 年 5 月），燃烧室压力服役中 ${R3.pc} bar、测试中达到 ${R3.pcTest} bar，比冲海平面 ${R3.ispSL} 秒、真空版 ${R3.ispVac} 秒，均取自维基百科。`,
       label: "一台猛禽 3 火箭发动机，喷管朝下立在发动机支架上，左边是蓝色的液氧立管，右边是琥珀色的甲烷立管。拆开后，氧涡轮泵和预燃室在左，甲烷涡轮泵和预燃室在右，中间是喷注器、万向节和带青铜色喷管的燃烧室，彩色路线表示推进剂在它们之间如何流动。",
     },
     overview: {

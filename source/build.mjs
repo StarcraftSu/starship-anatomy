@@ -234,8 +234,11 @@ function clipped(id, layer, pathD, body) {
 
 const cavity = (paths, kind = "") => S(paths, { tone: "faint", crease: "none", className: kind ? `ss-cav ss-cav-${kind}` : "ss-cav" });
 
-const RAPTOR = { exit: 0.6, bell: 1.65, throat: 0.19, chamber: 0.3, chamberLen: 0.5, converge: 0.2, head: 0.34, headLen: 0.38, pump: 0.25, pumpOff: 0.43, puck: 0.26, puckLen: 0.3 };
-const RVAC = { ...RAPTOR, exit: 1.15, bell: 2.6, regen: 1.15 };
+// Raptor 3: 3.1 m long. Nozzle exits 1.2 m across (twenty of them ring the 9 m booster), the throat sized for the
+// sea-level expansion ratio of 34.34; the vacuum version shares the throat and expands 80:1 (both ratios from Wikipedia).
+const THROAT = 0.6 / Math.sqrt(34.34);
+const RAPTOR = { exit: 0.6, bell: 1.6, throat: THROAT, chamber: 0.24, chamberLen: 0.35, converge: 0.15, head: 0.34, headLen: 0.55, pump: 0.25, pumpOff: 0.43, puck: 0.26, puckLen: 0.45 };
+const RVAC = { ...RAPTOR, exit: THROAT * Math.sqrt(80), bell: 2.45, regen: 1.0 };
 const lengthOf = (spec) => spec.bell + spec.converge + spec.chamberLen + spec.headLen + spec.puckLen;
 const bellR = (spec, s) => {
   const x = Math.min(1, Math.max(0, (s + spec.bell) / spec.bell));

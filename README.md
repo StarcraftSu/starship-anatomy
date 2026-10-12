@@ -104,6 +104,7 @@ The ship lies belly up so the heat-shield tiles and flaps face the viewer.
 | LOX / methane split | 3.6 : 1 by mass | Raptor's mixture ratio, applied to the totals above |
 | Raptor 3 mass | 1,525 kg | [Raptor, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Raptor) |
 | Flight timeline | Max-Q T+0:59, cutoff T+2:34, staging about 70 km, boostback ends T+3:41, landing burn T+6:30, catch T+6:54 (Flight 5, October 2024) | [The Space Bucket](https://thespacebucket.com/what-exactly-happened-on-starships-fifth-launch-attempt/) |
+| Raptor size and nozzle | 3.1 m long, 1.3 m across; expansion ratio 34.34 sea level, 80 vacuum | [Raptor, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Raptor) |
 | Raptor 3 chamber pressure, specific impulse | 330 bar (350 bar reached in testing); 350 s sea level, 380 s vacuum version | [Raptor, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Raptor) |
 | Heat shield | about 18,000 tiles, rated to 1,400 °C | [Starship spacecraft, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_(spacecraft)) |
 | Grid fins, interstage | 3 fins about 1.5× earlier ones; interstage built into the methane tank and kept | [Super Heavy, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Super_Heavy) |
@@ -118,7 +119,8 @@ Caveats:
 - The PEZ slot and the satellites are drawn from press descriptions (folded V3 satellites about 7 × 3.5 m); their exact sizes and the rack's layout are not published.
 - Fig 3's times follow Flight 5, the first catch; V3 flights may differ by seconds. Altitudes between the sourced points are interpolated, the timeline is compressed, and heights on screen above the tower are not to scale. The ship's time in orbit is approximate.
 - No crewed Starship has flown. The crew cabin is illustrative, after SpaceX's lunar-lander renders; the real lander also has no flaps or heat shield and has landing legs.
-- Proportions inside the tanks (dome depths, tube diameters, engine spacing) and the engine shapes are approximate. Chines are left off because it is unclear whether V3 boosters keep them.
+- Engine proportions: 3.1 m long; nozzle exits drawn 1.2 m across (Wikipedia gives the engine as 1.3 m across, but twenty nozzles have to fit in a ring around the 9 m booster), throats sized from Wikipedia's expansion ratios (34.34 at sea level, 80 for the vacuum version, which shares the throat, giving a 1.8 m vacuum nozzle). Raptor 3's internal layout is not published; Fig 2 arranges its parts after the usual full-flow layout and simplifies them to turned shapes.
+- Proportions inside the tanks (dome depths, tube diameters, engine spacing) are approximate. Chines are left off because it is unclear whether V3 boosters keep them.
 
 ## Rebuild
 
