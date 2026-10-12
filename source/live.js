@@ -14,6 +14,7 @@ const pSpecs = panel.querySelector("[data-p-specs]");
 const pExtra = panel.querySelector("[data-p-extra]");
 const pFigs = [...panel.querySelectorAll("[data-fig]")];
 const zoomHere = panel.querySelector("[data-zoom-here]");
+const toRaptor = panel.querySelector("[data-p-link]");
 const partButtons = [...panel.querySelectorAll(".ss-part")];
 const zoomLevel = root.querySelector("[data-zoom-level]");
 const apartButton = root.querySelector("[data-apart]");
@@ -130,6 +131,7 @@ function fillPanel(id) {
   else pExtra.removeAttribute("data-on");
   lensBox.hidden = !id;
   zoomHere.hidden = !id;
+  toRaptor.hidden = !figs.length;
   if (id) lensView.ready = false;
 }
 
@@ -614,16 +616,22 @@ function applyLang() {
   describe();
 }
 
-langButton.addEventListener("click", () => {
-  lang = LANGS.find((code) => code !== lang);
+// Any language button on the page asks with ss-lang-pick; this script keeps the choice and tells every figure.
+document.addEventListener("ss-lang-pick", (event) => {
+  const next = event.detail;
   try {
-    localStorage.setItem("ss-lang", lang);
+    localStorage.setItem("ss-lang", next);
   } catch {}
   const url = new URL(location.href);
-  url.searchParams.set("lang", lang);
+  url.searchParams.set("lang", next);
   history.replaceState(null, "", url);
+  document.dispatchEvent(new CustomEvent("ss-lang", { detail: next }));
+});
+document.addEventListener("ss-lang", (event) => {
+  lang = event.detail;
   applyLang();
 });
+langButton.addEventListener("click", () => document.dispatchEvent(new CustomEvent("ss-lang-pick", { detail: LANGS.find((code) => code !== lang) })));
 
 payButtons.forEach((button) =>
   button.addEventListener("click", () => {

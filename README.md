@@ -12,6 +12,12 @@ English and 中文: the page follows your browser's language; switch with the bu
 
 ![Zoomed in on the 33 booster engines after they slide out of the skirt](preview-engines.png)
 
+![The payload bay set up for Starlink: the satellite stack on the PEZ dispenser, one satellite sliding out of the slot door](preview-payload.png)
+
+A second figure below it takes one Raptor 3 apart and walks through how its propellants flow:
+
+![Raptor 3 taken apart on its stand, step 3 of the flow: the two preburners](preview-raptor.png)
+
 ## View it
 
 **Live: https://starcraftsu.github.io/starship-anatomy/** — follows your system's light or dark setting. Or go straight to the [light](https://starcraftsu.github.io/starship-anatomy/starship-light.html) or [dark](https://starcraftsu.github.io/starship-anatomy/starship.html) page.
@@ -31,7 +37,21 @@ To view it offline, download `starship-light.html` or `starship.html` and open i
 
 Left alone, it runs a slow tour through the sections, and the panel follows. Under reduced motion it stays still.
 
-## What the drawing shows
+## Fig 2: inside one Raptor 3
+
+Assembled, the engine looks the way Raptor 3 really does: almost no pipes, because SpaceX moved Raptor 2's plumbing and sensors into the engine's main structure. Point at it and it comes apart on its stand. The oxygen turbopump and its preburner move left, the methane pair moves right, and coloured paths show the routes the housings hide. Five steps walk through the full-flow staged combustion cycle:
+
+| Step | What lights up |
+|---|---|
+| 1 Two pumps | liquid oxygen and methane from the standpipes into the two turbopumps |
+| 2 Methane cools the engine | methane down to the nozzle manifold and up through the wall channels |
+| 3 Two preburners | all the oxygen (plus a little methane) to one preburner, all the methane (plus a little oxygen) to the other |
+| 4 Turbines, then the injector | oxygen-rich gas spins the oxygen pump, methane-rich gas the methane pump; both gases go on to the injector |
+| 5 Main chamber | gas meets gas at 330 bar and leaves through the nozzle |
+
+Pick a step in the panel, use the arrow keys, or press **Play the flow**. Left alone it runs the steps as a tour. The paths are a diagram of the cycle, not the engine's real internal passages, and the parts are simplified.
+
+## What Fig 1 shows
 
 The stack lies on a long stacking jig: a base plate with two rails, a metre ruler (zero at the booster's engine plane) and cradles that slide along the rails.
 
@@ -61,6 +81,7 @@ The ship lies belly up so the heat-shield tiles and flaps face the viewer.
 | Ship propellant | about 1,600 t | [Starship, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship) (no official V3 figure found) |
 | LOX / methane split | 3.6 : 1 by mass | Raptor's mixture ratio, applied to the totals above |
 | Raptor 3 mass | 1,525 kg | [Raptor, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Raptor) |
+| Raptor 3 chamber pressure, specific impulse | 330 bar (350 bar reached in testing); 350 s sea level, 380 s vacuum version | [Raptor, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Raptor) |
 | Heat shield | about 18,000 tiles, rated to 1,400 °C | [Starship spacecraft, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_(spacecraft)) |
 | Grid fins, interstage | 3 fins about 1.5× earlier ones; interstage built into the methane tank and kept | [Super Heavy, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Super_Heavy) |
 | PEZ dispenser | mounted on the forward dome; satellites pushed out one at a time from the base, the stack lowered for the next | [Starship spacecraft, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_(spacecraft)) |
@@ -84,8 +105,9 @@ node source/build.mjs --light   # writes starship-light.html
 node source/build.mjs           # writes starship.html
 ```
 
-- `source/build.mjs` holds the model (every number above) and all the geometry.
-- `source/live.js` is the interaction: springs, the tour, zoom and pan, the side panel, pointer, touch and keyboard.
+- `source/build.mjs` holds the model for Fig 1 (every number above), all its geometry, and every word on the page in English and Chinese.
+- `source/live.js` is Fig 1's interaction: springs, the tour, zoom and pan, the side panel, the payload switch, pointer, touch and keyboard, and the language switch shared by both figures.
+- `source/raptor.mjs` and `source/raptor-live.js` are Fig 2: the engine, its flow paths and text, and its steps, play mode and tour.
 - `source/starship.css` holds the page styles and the colour tokens for every material, light and dark.
 - `source/kit/` is a copy of the drawing kit the build uses.
 

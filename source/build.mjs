@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as k from "./kit/iso-kit.mjs";
 import * as G from "./kit/lathe.mjs";
+import { buildRaptor } from "./raptor.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const THEME = process.argv.includes("--light") ? "light" : "dark";
@@ -946,6 +947,7 @@ const TEXT = {
       apart: "Take apart",
       together: "Put together",
       zoomHere: "Zoom the drawing here",
+      toRaptor: "Inside one Raptor 3 ↓",
       panel: "Section details",
       stage: "Starship V3 on a stacking jig. Hover or use the arrow keys to pick a section, Space to take it apart, plus and minus to zoom, Escape to reset.",
       keyLox: "Liquid oxygen",
@@ -1035,6 +1037,7 @@ const TEXT = {
       apart: "拆开",
       together: "装回",
       zoomHere: "把图放大到这一段",
+      toRaptor: "看一台猛禽 3 的内部 ↓",
       panel: "分段详情",
       stage: "放在堆叠工装上的星舰 V3。悬停或用方向键选择分段，空格键拆开，加号和减号缩放，Esc 复位。",
       keyLox: "液氧",
@@ -1152,12 +1155,14 @@ const controls = `<div class="ss-controls"><button type="button" class="ss-butto
 const extra = `<div class="ss-extra" data-p-extra><div class="ss-extra-figs"><figure class="ss-extra-fig" data-fig="sl">${FIG_SL}<figcaption ${tx("figSL")}</figcaption></figure><figure class="ss-extra-fig" data-fig="pair" hidden>${FIG_SL_PAIR}<figcaption ${tx("figSL")}</figcaption></figure><figure class="ss-extra-fig" data-fig="vac" hidden>${FIG_VAC}<figcaption ${tx("figVac")}</figcaption></figure></div></div>`;
 const paySwitch = `<div class="ss-pay" data-p-pay hidden><span class="ss-pay-label" ${tx("payLabel")}</span><div class="ss-seg" role="group"><button type="button" data-pay-set="starlink" aria-pressed="true" ${tx("payStarlink")}</button><button type="button" data-pay-set="crew" aria-pressed="false" ${tx("payCrew")}</button></div></div>`;
 const langSwitch = `<button type="button" class="ss-lang" data-lang lang="zh-Hans" aria-label="${esc(en.ui.langSwitchLabel)}">${esc(en.ui.langSwitch)}</button>`;
-const panel = `<aside class="iso-plate ss-panel" data-t-aria="panel" aria-label="${esc(en.ui.panel)}"><h2 class="ss-panel-head"><span class="ss-panel-num" data-p-num>V3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span>${langSwitch}</h2><div class="ss-lens-box" data-p-lens hidden><svg class="iso-svg ss-lens" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="#ss-scene"/></svg></div>${paySwitch}${extra}<p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><button type="button" class="ss-button ss-zoom-here" data-zoom-here hidden ${tx("zoomHere")}</button><div class="ss-keys">${KEYS}</div><div class="ss-parts">${PARTS}</div></aside>`;
+const panel = `<aside class="iso-plate ss-panel" data-t-aria="panel" aria-label="${esc(en.ui.panel)}"><h2 class="ss-panel-head"><span class="ss-panel-num" data-p-num>V3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span>${langSwitch}</h2><div class="ss-lens-box" data-p-lens hidden><svg class="iso-svg ss-lens" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="#ss-scene"/></svg></div>${paySwitch}${extra}<p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-panel-actions"><button type="button" class="ss-button ss-zoom-here" data-zoom-here hidden ${tx("zoomHere")}</button><a class="ss-button ss-link" href="#raptor" data-p-link hidden ${tx("toRaptor")}</a></div><div class="ss-keys">${KEYS}</div><div class="ss-parts">${PARTS}</div></aside>`;
 const body = `<figure class="iso-figure ss"><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("caption")}</span></figcaption></figure><span class="ss-live" aria-live="polite" data-live></span>`;
 
+const FIG2 = buildRaptor({ esc });
 const CSS = readFileSync(join(HERE, "starship.css"), "utf8");
 const LIVE = readFileSync(join(HERE, "live.js"), "utf8").replace("__DATA__", JSON.stringify(DATA));
-const page = k.pageHtml({ title: en.pageTitle, theme: THEME, body: `<style>${CSS}</style>${body}`, script: LIVE, width: 1440 });
+const RAPTOR_LIVE = readFileSync(join(HERE, "raptor-live.js"), "utf8").replace("__RAPTOR__", JSON.stringify(FIG2.data));
+const page = k.pageHtml({ title: en.pageTitle, theme: THEME, body: `<style>${CSS}</style>${body}${FIG2.html}`, script: `${LIVE}\n${RAPTOR_LIVE}`, width: 1440 });
 const name = THEME === "light" ? "starship-light.html" : "starship.html";
 writeFileSync(join(HERE, "..", name), page);
 console.log("wrote", name, `${(page.length / 1024).toFixed(0)} KB`, `${W}×${H}`);
