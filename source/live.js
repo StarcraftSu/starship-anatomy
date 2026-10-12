@@ -135,6 +135,25 @@ function fillPanel(id) {
   if (id) lensView.ready = false;
 }
 
+// Hold the layout at its tallest panel, so nothing under the figure moves when the panel changes.
+const layout = root.querySelector(".ss-layout");
+let holdTimer = 0;
+function holdHeight() {
+  layout.style.minHeight = "";
+  const keep = payload;
+  let tallest = 0;
+  for (const name of ["starlink", "crew"]) {
+    payload = name;
+    for (const id of [null, ...IDS]) {
+      fillPanel(id);
+      tallest = Math.max(tallest, layout.offsetHeight);
+    }
+  }
+  payload = keep;
+  fillPanel(selected);
+  layout.style.minHeight = `${Math.ceil(tallest)}px`;
+}
+
 function select(id) {
   if (selected === id) return;
   selected = id;
@@ -593,6 +612,8 @@ stage.addEventListener("keydown", (event) => {
 
 window.addEventListener("resize", () => {
   lensView.ready = false;
+  clearTimeout(holdTimer);
+  holdTimer = setTimeout(holdHeight, 150);
   run();
 });
 
@@ -610,7 +631,7 @@ function applyLang() {
   langButton.textContent = words.ui.langSwitch;
   langButton.lang = other === "zh" ? "zh-Hans" : "en";
   langButton.setAttribute("aria-label", words.ui.langSwitchLabel);
-  fillPanel(selected);
+  holdHeight();
   say(readoutText());
   stage.setAttribute("aria-valuetext", "");
   describe();
@@ -643,6 +664,8 @@ payButtons.forEach((button) =>
 if (still.matches) touring = false;
 root.dataset.payload = payload;
 if (lang !== "en") applyLang();
+else holdHeight();
+document.fonts?.ready.then(holdHeight);
 applyView();
 place();
 say(readoutText());

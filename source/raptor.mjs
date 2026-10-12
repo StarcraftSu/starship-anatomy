@@ -317,7 +317,7 @@ export function buildRaptor({ esc }) {
   const stage = `<div class="ss-stage rp-stage" tabindex="0" role="slider" data-rt-aria="stage" aria-label="${esc(en.ui.stage)}" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" aria-valuetext="${esc(en.ui.assembled)}">${svg}</div>`;
   const controls = `<div class="ss-controls"><button type="button" class="ss-button" data-apart aria-pressed="false">${esc(en.ui.apart)}</button><button type="button" class="ss-button" data-play aria-pressed="false">${esc(en.ui.play)}</button><span class="ss-hint" ${tx("hint")}</span></div>`;
   const panel = `<aside class="iso-plate ss-panel rp-panel" data-rt-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts">${stepButtons}</div><h2 class="ss-panel-head"><span class="ss-panel-num" data-p-num>R3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span><button type="button" class="ss-lang" data-lang>${esc(en.ui.langSwitch)}</button></h2><p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-keys">${keys}</div></aside>`;
-  const html = `<figure class="iso-figure ss rp" id="raptor"><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("caption")}</span></figcaption></figure>`;
+  const html = `<figure class="iso-figure ss rp" id="raptor"><figcaption class="iso-legend"><span class="iso-caption" ${tx("caption")}</span></figcaption><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div></figure>`;
   return { html, data };
 }
 

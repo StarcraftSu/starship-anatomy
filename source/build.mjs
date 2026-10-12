@@ -980,7 +980,7 @@ const TEXT = {
     },
     overview: {
       title: "Starship V3",
-      text: `Two stainless-steel stages, both 9 m across: the ${M.booster} m Super Heavy booster and the ${M.ship} m ship. Each keeps its methane above its oxygen, so the methane has to run through the oxygen tank to reach the engines. Point at a section or pick one below to see it close up; zoom with the scroll wheel or a pinch, and drag to pan. Section 06 switches the payload between satellites and crew.`,
+      text: `Two stainless-steel stages, both 9 m across: the ${M.booster} m Super Heavy booster and the ${M.ship} m ship. Each keeps its methane above its oxygen, so the methane has to run through the oxygen tank to reach the engines. Point at a section or pick one from the list above to see it close up; zoom with the scroll wheel or a pinch, and drag to pan. Section 06 switches the payload between satellites and crew.`,
       specs: [["Height", `${M.stack} m`], ["Engines", "33 + 6 Raptor 3"], ["Propellant", `${fmt(M.boosterProp)} t + ≈${fmt(M.shipProp)} t`], ["Liftoff thrust", `≈${LIFTOFF} tf`]],
     },
     sections: {
@@ -1070,7 +1070,7 @@ const TEXT = {
     },
     overview: {
       title: "星舰 V3",
-      text: `两级都是直径 9 米的不锈钢箭体：${M.booster} 米的超重型助推器，和 ${M.ship} 米的飞船。每一级都把甲烷放在液氧上面，所以甲烷必须穿过液氧箱才能到达发动机。把鼠标移到某一段上，或在下面的列表里选一段，就能看到它的近景；用滚轮或双指捏合缩放，拖动平移。第 06 段可以在卫星和载人两种载荷之间切换。`,
+      text: `两级都是直径 9 米的不锈钢箭体：${M.booster} 米的超重型助推器，和 ${M.ship} 米的飞船。每一级都把甲烷放在液氧上面，所以甲烷必须穿过液氧箱才能到达发动机。把鼠标移到某一段上，或在上面的列表里选一段，就能看到它的近景；用滚轮或双指捏合缩放，拖动平移。第 06 段可以在卫星和载人两种载荷之间切换。`,
       specs: [["高度", `${M.stack} 米`], ["发动机", "33 + 6 台猛禽 3"], ["推进剂", `${fmt(M.boosterProp)} 吨 + 约 ${fmt(M.shipProp)} 吨`], ["起飞推力", `约 ${LIFTOFF} 吨力`]],
     },
     sections: {
@@ -1156,7 +1156,7 @@ const extra = `<div class="ss-extra" data-p-extra><div class="ss-extra-figs"><fi
 const paySwitch = `<div class="ss-pay" data-p-pay hidden><span class="ss-pay-label" ${tx("payLabel")}</span><div class="ss-seg" role="group"><button type="button" data-pay-set="starlink" aria-pressed="true" ${tx("payStarlink")}</button><button type="button" data-pay-set="crew" aria-pressed="false" ${tx("payCrew")}</button></div></div>`;
 const langSwitch = `<button type="button" class="ss-lang" data-lang lang="zh-Hans" aria-label="${esc(en.ui.langSwitchLabel)}">${esc(en.ui.langSwitch)}</button>`;
 const panel = `<aside class="iso-plate ss-panel" data-t-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts">${PARTS}</div><h2 class="ss-panel-head"><span class="ss-panel-num" data-p-num>V3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span>${langSwitch}</h2><div class="ss-lens-box" data-p-lens hidden><svg class="iso-svg ss-lens" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="#ss-scene"/></svg></div>${paySwitch}${extra}<p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-panel-actions"><button type="button" class="ss-button ss-zoom-here" data-zoom-here hidden ${tx("zoomHere")}</button><a class="ss-button ss-link" href="#raptor" data-p-link hidden ${tx("toRaptor")}</a></div><div class="ss-keys">${KEYS}</div></aside>`;
-const body = `<figure class="iso-figure ss"><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("caption")}</span></figcaption></figure><span class="ss-live" aria-live="polite" data-live></span>`;
+const body = `<figure class="iso-figure ss"><figcaption class="iso-legend"><span class="iso-caption" ${tx("caption")}</span></figcaption><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div></figure><span class="ss-live" aria-live="polite" data-live></span>`;
 
 const FIG2 = buildRaptor({ esc });
 const CSS = readFileSync(join(HERE, "starship.css"), "utf8");

@@ -32,6 +32,12 @@
   --ss-antenna: #2b3445;
 }
 
+/* The description leads each figure, above the drawing, so it never moves while the panel changes. */
+.ss > .iso-legend {
+  margin: 0 0 16px;
+  max-width: 78em;
+}
+
 .ss-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;

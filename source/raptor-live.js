@@ -90,6 +90,27 @@
     );
   }
 
+  // Hold the layout at its tallest panel, so nothing under the figure moves when the step changes.
+  const layout = root.querySelector(".ss-layout");
+  let holdTimer = 0;
+  function holdHeight() {
+    layout.style.minHeight = "";
+    const keep = step;
+    let tallest = 0;
+    for (const n of [0, ...D.steps]) {
+      step = n;
+      fillPanel();
+      tallest = Math.max(tallest, layout.offsetHeight);
+    }
+    step = keep;
+    fillPanel();
+    layout.style.minHeight = `${Math.ceil(tallest)}px`;
+  }
+  window.addEventListener("resize", () => {
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(holdHeight, 150);
+  });
+
   function setStep(n) {
     if (step === n) return;
     step = n;
@@ -333,7 +354,7 @@
     playButton.textContent = playing ? words.ui.pause : words.ui.play;
     langButton.textContent = words.ui.langSwitch;
     langButton.lang = lang === "zh" ? "en" : "zh-Hans";
-    fillPanel();
+    holdHeight();
     say(readoutText());
     stage.setAttribute("aria-valuetext", "");
     describe();
@@ -348,6 +369,8 @@
   for (const el of flowEls) el.setAttribute("data-on", "");
   if (still.matches) touring = false;
   if (lang !== "en") applyLang();
+  else holdHeight();
+  document.fonts?.ready.then(holdHeight);
   place();
   say(readoutText());
 }
