@@ -336,9 +336,12 @@
   background: var(--key);
 }
 
+/* The list sits at the top of the panel so picking a section never moves it under the pointer. */
 .ss-parts {
   display: grid;
   gap: 4px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ss-ring);
 }
 
 .ss-part {
