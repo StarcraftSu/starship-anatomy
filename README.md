@@ -18,6 +18,10 @@ A second figure below it takes one Raptor 3 apart and walks through how its prop
 
 ![Raptor 3 taken apart on its stand, step 3 of the flow: the two preburners](preview-raptor.png)
 
+A third figure plays one whole flight, from the pad to the booster's catch:
+
+![Hot staging on Fig 3's timeline: the ship's engines firing through the interstage vents, with the event panel linking to Fig 1](preview-flight.png)
+
 ## View it
 
 **Live: https://starcraftsu.github.io/starship-anatomy/** — follows your system's light or dark setting. Or go straight to the [light](https://starcraftsu.github.io/starship-anatomy/starship-light.html) or [dark](https://starcraftsu.github.io/starship-anatomy/starship.html) page.
@@ -51,6 +55,24 @@ Assembled, the engine looks the way Raptor 3 really does: almost no pipes, becau
 
 Pick a step in the panel, use the arrow keys, or press **Play the flow**. Left alone it runs the steps as a tour. The paths are a diagram of the cycle, not the engine's real internal passages, and the parts are simplified.
 
+## Fig 3: one flight
+
+The stack stands on its launch mount beside the tower with its two catch arms. A timeline plays the flight in under a minute; drag it, press **Play**, pick an event, or use the arrow keys and Space. Left alone, it plays when you scroll to it.
+
+| Event | Time (Flight 5) | Linked to Fig 1 |
+|---|---|---|
+| Ignition, liftoff | T−0:03, T+0:00 | 01 engines |
+| Max-Q | T+0:59 | — |
+| Main engine cutoff | T+2:34 | 01 engines |
+| Hot staging, about 70 km up | T+2:37 | 03 interstage, 04 ship engines |
+| Flip and boostback (ends T+3:41) | T+2:48 | 01 engines |
+| Falling back on the grid fins | T+4:00 | 03 grid fins |
+| Landing burn | T+6:30 | 01 engines |
+| Caught by the tower | T+6:54 | 03 grid fins |
+| Ship in orbit | about T+8:30 | 04, 06 payload |
+
+Each event outlines the parts it uses on the rocket in Fig 3, and its buttons in the panel jump up to Fig 1 with that section picked and taken apart. The camera follows the vehicle, the sky darkens with altitude, and the readout gives mission time and approximate altitude.
+
 ## What Fig 1 shows
 
 The stack lies on a long stacking jig: a base plate with two rails, a metre ruler (zero at the booster's engine plane) and cradles that slide along the rails.
@@ -81,6 +103,7 @@ The ship lies belly up so the heat-shield tiles and flaps face the viewer.
 | Ship propellant | about 1,600 t | [Starship, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship) (no official V3 figure found) |
 | LOX / methane split | 3.6 : 1 by mass | Raptor's mixture ratio, applied to the totals above |
 | Raptor 3 mass | 1,525 kg | [Raptor, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Raptor) |
+| Flight timeline | Max-Q T+0:59, cutoff T+2:34, staging about 70 km, boostback ends T+3:41, landing burn T+6:30, catch T+6:54 (Flight 5, October 2024) | [The Space Bucket](https://thespacebucket.com/what-exactly-happened-on-starships-fifth-launch-attempt/) |
 | Raptor 3 chamber pressure, specific impulse | 330 bar (350 bar reached in testing); 350 s sea level, 380 s vacuum version | [Raptor, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Raptor) |
 | Heat shield | about 18,000 tiles, rated to 1,400 °C | [Starship spacecraft, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_(spacecraft)) |
 | Grid fins, interstage | 3 fins about 1.5× earlier ones; interstage built into the methane tank and kept | [Super Heavy, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Super_Heavy) |
@@ -93,6 +116,7 @@ Caveats:
 - Sources disagree on some V3 numbers. An April 2026 review gives about 3,400 t of booster propellant and 280 t per Raptor 3; this figure uses the later May 2026 values.
 - The header tanks are drawn in the nose, where they have been since Ship 24; their V3 placement is not confirmed.
 - The PEZ slot and the satellites are drawn from press descriptions (folded V3 satellites about 7 × 3.5 m); their exact sizes and the rack's layout are not published.
+- Fig 3's times follow Flight 5, the first catch; V3 flights may differ by seconds. Altitudes between the sourced points are interpolated, the timeline is compressed, and heights on screen above the tower are not to scale. The ship's time in orbit is approximate.
 - No crewed Starship has flown. The crew cabin is illustrative, after SpaceX's lunar-lander renders; the real lander also has no flaps or heat shield and has landing legs.
 - Proportions inside the tanks (dome depths, tube diameters, engine spacing) and the engine shapes are approximate. Chines are left off because it is unclear whether V3 boosters keep them.
 
@@ -108,6 +132,7 @@ node source/build.mjs           # writes starship.html
 - `source/build.mjs` holds the model for Fig 1 (every number above), all its geometry, and every word on the page in English and Chinese.
 - `source/live.js` is Fig 1's interaction: springs, the tour, zoom and pan, the side panel, the payload switch, pointer, touch and keyboard, and the language switch shared by both figures.
 - `source/raptor.mjs` and `source/raptor-live.js` are Fig 2: the engine, its flow paths and text, and its steps, play mode and tour.
+- `source/flight.mjs` and `source/flight-live.js` are Fig 3: the launch site, the booster drawn at 25 rotation angles, the arms at 13 positions, the timeline's keyframes and events, and the playback.
 - `source/starship.css` holds the page styles and the colour tokens for every material, light and dark.
 - `source/kit/` is a copy of the drawing kit the build uses.
 

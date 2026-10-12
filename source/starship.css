@@ -1067,6 +1067,155 @@
   }
 }
 
+/* Fig 3: one flight */
+
+.fl {
+  margin-top: 72px;
+  --fl-sky: var(--anatomy-card);
+  --fl-space: #0b1020;
+  --fl-flame-0: #fff4c8;
+  --fl-flame-1: #ffb23e;
+  --fl-flame-2: #ff6a1f;
+  --fl-cloud: #ffffff;
+  --fl-steam: #f4f5f6;
+}
+
+.iso:not([data-theme="light"]) .fl {
+  --fl-space: #04060d;
+  --fl-cloud: #2a2d33;
+  --fl-steam: #c9ccd1;
+}
+
+.fl-sky {
+  fill: var(--fl-sky);
+}
+
+.fl-space {
+  fill: var(--fl-space);
+}
+
+.fl-stars {
+  fill: #ffffff;
+}
+
+.fl-cloud ellipse {
+  fill: var(--fl-cloud);
+  opacity: 0.82;
+}
+
+.fl-steam {
+  fill: var(--fl-steam);
+}
+
+.fl-plume-out {
+  fill: url(#fl-grad-out);
+}
+
+.fl-plume-core {
+  fill: url(#fl-grad-core);
+}
+
+.fl-jet {
+  fill: var(--fl-flame-1);
+}
+
+.fl-bell circle {
+  fill: #86654b;
+}
+
+.fl-concrete {
+  --anatomy-paper: #e8e6e1;
+  --anatomy-top: #efede9;
+  --anatomy-shade-0: #cfccc5;
+  --anatomy-shade-1: #d7d4ce;
+  --anatomy-shade-2: #dfdcd6;
+  --anatomy-shade-3: #e6e3de;
+}
+
+.iso:not([data-theme="light"]) .fl-concrete {
+  --anatomy-paper: #1b1b1a;
+  --anatomy-top: #222220;
+  --anatomy-shade-0: #141413;
+  --anatomy-shade-1: #171716;
+  --anatomy-shade-2: #1a1a19;
+  --anatomy-shade-3: #1d1d1c;
+}
+
+.fl-tower {
+  --anatomy-paper: #9ea4ab;
+  --anatomy-top: #b4b9bf;
+  --anatomy-shade-0: #6f767e;
+  --anatomy-shade-1: #7d848c;
+  --anatomy-shade-2: #8b9199;
+  --anatomy-shade-3: #969ca3;
+  --anatomy-hi: #2c3036;
+}
+
+.iso:not([data-theme="light"]) .fl-tower {
+  --anatomy-paper: #2c3036;
+  --anatomy-top: #383d44;
+  --anatomy-shade-0: #1d2024;
+  --anatomy-shade-1: #22252a;
+  --anatomy-shade-2: #272a30;
+  --anatomy-shade-3: #2c3036;
+  --anatomy-hi: #b4bac2;
+}
+
+.fl-pad {
+  --anatomy-paper: #e0a640;
+  --anatomy-top: #ecbd62;
+  --anatomy-shade-0: #b47a1c;
+  --anatomy-shade-1: #c28626;
+  --anatomy-shade-2: #cf9330;
+  --anatomy-shade-3: #d99e38;
+}
+
+.fl-stage [data-sec][data-on] .iso-solid > .iso-edge {
+  stroke: var(--ss-accent);
+  stroke-width: 1.4;
+}
+
+.fl-controls {
+  right: 20px;
+}
+
+.fl-controls .ss-button {
+  min-width: 72px;
+}
+
+.fl-scrub {
+  flex: 1;
+  min-width: 120px;
+  max-width: 520px;
+  margin-left: 8px;
+  accent-color: var(--ss-accent);
+}
+
+.fl-links {
+  display: grid;
+  gap: 6px;
+}
+
+.fl-links-label {
+  font-size: 12px;
+  color: var(--anatomy-muted);
+}
+
+.fl-link-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fl-event .ss-num {
+  min-width: 42px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fl .iso-plate-corner[data-corner="readout"] {
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 1100px) {
   .ss-layout {
     grid-template-columns: minmax(0, 1fr);

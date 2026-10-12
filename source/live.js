@@ -647,6 +647,16 @@ document.addEventListener("ss-lang", (event) => {
 });
 langButton.addEventListener("click", () => document.dispatchEvent(new CustomEvent("ss-lang-pick", { detail: LANGS.find((code) => code !== lang) })));
 
+// Other figures ask Fig 1 to show a section: pick it, take the stack apart and scroll up to it.
+document.addEventListener("ss-show-section", (event) => {
+  quiet();
+  locked = true;
+  glideTo(1, D.W / 2, D.H / 2);
+  select(event.detail);
+  setApart(true);
+  root.scrollIntoView({ behavior: still.matches ? "auto" : "smooth", block: "start" });
+});
+
 payButtons.forEach((button) =>
   button.addEventListener("click", () => {
     quiet();
