@@ -21,8 +21,32 @@ const still = matchMedia("(prefers-reduced-motion: reduce)");
 
 const IDS = D.order;
 const SUBS = Object.keys(D.subs);
-const SUB_OF = Object.fromEntries(SUBS.map((sub) => [D.subs[sub], sub]));
-const spring = Object.fromEntries([...IDS, ...SUBS].map((id) => [id, { x: 0, v: 0, target: 0, pending: null }]));
+const SHOWS = Object.keys(D.shows);
+const SUB_OF = Object.fromEntries([...SUBS, ...SHOWS].map((sub) => [D.subs[sub] || D.shows[sub], sub]));
+const ALL = [...IDS, ...SUBS, ...SHOWS];
+const spring = Object.fromEntries(ALL.map((id) => [id, { x: 0, v: 0, target: 0, pending: null }]));
+const doors = [...stage.querySelectorAll("[data-door]")];
+const payButtons = [...panel.querySelectorAll("[data-pay-set]")];
+const paySwitch = panel.querySelector("[data-p-pay]");
+let payload = "starlink";
+const langButton = panel.querySelector("[data-lang]");
+const LANGS = Object.keys(D.t);
+
+function pickLang() {
+  const asked = new URLSearchParams(location.search).get("lang");
+  if (LANGS.includes(asked)) return asked;
+  try {
+    const kept = localStorage.getItem("ss-lang");
+    if (LANGS.includes(kept)) return kept;
+  } catch {}
+  return (navigator.languages || [navigator.language]).some((code) => /^zh\b/i.test(code || "")) ? "zh" : "en";
+}
+let lang = pickLang();
+const T = () => D.t[lang];
+const sayOf = (id) => {
+  const line = T().say[id];
+  return typeof line === "string" ? line : line[payload];
+};
 const nodes = [...stage.querySelectorAll(".it, .it-sub")].map((el) => ({
   el,
   ride: el.dataset.ride || el.dataset.piece,
@@ -60,7 +84,7 @@ function announce(text) {
 }
 
 function describe() {
-  announce(selected ? `${D.sections[selected].title}: ${D.pieces[selected].say}` : apart ? "Apart: six sections and their engines" : "Assembled");
+  announce(selected ? `${T().sections[selected].title}: ${sayOf(selected)}` : apart ? T().ui.apartSay : T().ui.assembled);
 }
 
 function setApart(on) {
@@ -78,17 +102,19 @@ function setApart(on) {
     const wait = on && D.subs[id] ? 0.35 : 0;
     state.pending = { value, at: clock + (still.matches ? 0 : index++ * D.spring.stagger + wait) };
   }
-  apartButton.textContent = on ? "Put together" : "Take apart";
+  apartButton.textContent = on ? T().ui.together : T().ui.apart;
   apartButton.setAttribute("aria-pressed", String(on));
   describe();
   run();
 }
 
 function fillPanel(id) {
-  const data = id ? D.sections[id] : D.overview;
-  pNum.textContent = id ? data.num : "V3";
+  const words = id ? T().sections[id] : T().overview;
+  const data = words.pay ? { ...words, ...words.pay[payload] } : words;
+  pNum.textContent = id ? D.sections[id].num : "V3";
   pTitle.textContent = data.title;
   pText.textContent = data.text;
+  paySwitch.hidden = !words.pay;
   pSpecs.replaceChildren(
     ...data.specs.flatMap(([key, value]) => {
       const dt = document.createElement("dt");
@@ -98,7 +124,7 @@ function fillPanel(id) {
       return [dt, dd];
     }),
   );
-  const figs = id ? data.figs : [];
+  const figs = id ? D.sections[id].figs : [];
   pFigs.forEach((fig) => (fig.hidden = !figs.includes(fig.dataset.fig)));
   if (figs.length) pExtra.setAttribute("data-on", "");
   else pExtra.removeAttribute("data-on");
@@ -119,6 +145,7 @@ function select(id) {
   partButtons.forEach((button) => (button.dataset.part === id ? button.setAttribute("data-on", "") : button.removeAttribute("data-on")));
   stage.setAttribute("aria-valuenow", String(id ? IDS.indexOf(id) + 1 : 0));
   fillPanel(id);
+  wantShows();
   describe();
   run();
 }
@@ -150,8 +177,9 @@ function steer(state, dt, calm) {
 function place() {
   for (const node of nodes) {
     const share = spring[node.ride].x;
-    const tx = D.EX[0] * node.m[0] * share;
-    const ty = D.EX[1] * node.m[0] * share;
+    const [mx, my, mz] = node.m;
+    const tx = (D.EX[0] * mx + D.EY[0] * my + D.EZ[0] * mz) * share;
+    const ty = (D.EX[1] * mx + D.EY[1] * my + D.EZ[1] * mz) * share;
     const text = Math.abs(share) < 1e-4 ? "" : `translate(${tx.toFixed(2)} ${ty.toFixed(2)})`;
     if (text !== node.shown) {
       node.shown = text;
@@ -159,6 +187,32 @@ function place() {
       else node.el.removeAttribute("transform");
     }
   }
+  const open = spring["nose-sat"].x > 0.01;
+  for (const door of doors) if ((door.getAttribute("display") === "none") !== open) door.setAttribute("display", open ? "none" : "inline");
+}
+
+function wantShows() {
+  for (const id of SHOWS) {
+    const on = selected === D.shows[id] && payload === "starlink";
+    const state = spring[id];
+    const value = on ? 1 : 0;
+    if (state.target === value && !state.pending) continue;
+    if (state.pending && state.pending.value === value) continue;
+    state.pending = { value, at: clock + (on && !still.matches ? 0.7 : 0) };
+  }
+}
+
+function setPayload(name) {
+  if (payload === name) return;
+  payload = name;
+  root.dataset.payload = name;
+  for (const el of stage.querySelectorAll("[data-pay]")) el.setAttribute("display", el.dataset.pay === name ? "inline" : "none");
+  payButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.paySet === name)));
+  if (name !== "starlink") for (const id of SHOWS) Object.assign(spring[id], { x: 0, v: 0, target: 0, pending: null });
+  if (selected) fillPanel(selected);
+  wantShows();
+  describe();
+  run();
 }
 
 function boxNow(id) {
@@ -271,10 +325,10 @@ function tourAt(time) {
 }
 
 function readoutText() {
-  if (selected) return D.pieces[selected].say;
+  if (selected) return sayOf(selected);
   const moving = [...IDS, ...SUBS].some((id) => Math.abs(spring[id].x - spring[id].target) > 0.002 || spring[id].pending);
-  if (moving) return apart ? "taking it apart" : "stacking";
-  return apart ? "six sections · 39 engines out" : D.idle;
+  if (moving) return apart ? T().ui.taking : T().ui.stacking;
+  return apart ? T().ui.apartIdle : T().idle;
 }
 
 function quiet() {
@@ -304,7 +358,7 @@ function tick(now) {
     select(step.part);
   }
   let moving = false;
-  for (const id of [...IDS, ...SUBS]) if (steer(spring[id], dt, calm)) moving = true;
+  for (const id of ALL) if (steer(spring[id], dt, calm)) moving = true;
   place();
   if (stepView(dt, calm)) moving = true;
   if (stepLens(dt, calm)) moving = true;
@@ -540,7 +594,47 @@ window.addEventListener("resize", () => {
   run();
 });
 
+function applyLang() {
+  const words = T();
+  document.documentElement.lang = lang === "zh" ? "zh-Hans" : "en";
+  document.title = words.pageTitle;
+  root.dataset.lang = lang;
+  for (const el of root.querySelectorAll("[data-t]")) el.textContent = words.ui[el.dataset.t];
+  for (const el of root.querySelectorAll("[data-t-aria]")) el.setAttribute("aria-label", words.ui[el.dataset.tAria]);
+  svg.setAttribute("aria-label", words.ui.label);
+  partButtons.forEach((button) => (button.querySelector(".ss-part-name").textContent = words.sections[button.dataset.part].title));
+  apartButton.textContent = apart ? words.ui.together : words.ui.apart;
+  const other = LANGS.find((code) => code !== lang);
+  langButton.textContent = words.ui.langSwitch;
+  langButton.lang = other === "zh" ? "zh-Hans" : "en";
+  langButton.setAttribute("aria-label", words.ui.langSwitchLabel);
+  fillPanel(selected);
+  say(readoutText());
+  stage.setAttribute("aria-valuetext", "");
+  describe();
+}
+
+langButton.addEventListener("click", () => {
+  lang = LANGS.find((code) => code !== lang);
+  try {
+    localStorage.setItem("ss-lang", lang);
+  } catch {}
+  const url = new URL(location.href);
+  url.searchParams.set("lang", lang);
+  history.replaceState(null, "", url);
+  applyLang();
+});
+
+payButtons.forEach((button) =>
+  button.addEventListener("click", () => {
+    quiet();
+    setPayload(button.dataset.paySet);
+  }),
+);
+
 if (still.matches) touring = false;
+root.dataset.payload = payload;
+if (lang !== "en") applyLang();
 applyView();
 place();
 say(readoutText());

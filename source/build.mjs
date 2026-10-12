@@ -36,7 +36,7 @@ const AZIMUTH = 52;
 const ELEVATION = 26;
 
 const PIECES = [
-  { id: "nose", name: "Payload bay and nose", s0: SHIP + 33, s1: M.stack, out: 21, cradles: [SHIP + 36] },
+  { id: "nose", name: "Payload bay and nose", s0: SHIP + 33, s1: M.stack, out: 21, cradles: [SHIP + 37.4] },
   { id: "sch4", name: "Ship methane tank", s0: SHIP + 20, s1: SHIP + 33, out: 14, cradles: [SHIP + 26.5] },
   { id: "slox", name: "Ship oxygen tank and six Raptors", s0: SHIP, s1: SHIP + 20, out: 7, cradles: [SHIP + 11, SHIP + 17.5] },
   { id: "bch4", name: "Booster methane tank, grid fins, interstage", s0: 41, s1: SHIP, out: -2, cradles: [47, 61] },
@@ -449,14 +449,6 @@ aftOpening(BY.bch4, cavity(dish(41, 1.8), "lox") + Ln(dishLines(41, 1.8, { rings
   engineBundle(BY.slox, SHIP_ENGINES, SHIP);
 }
 aftOpening(BY.sch4, cavity(dish(SHIP + 20, 1.8), "lox") + Ln(dishLines(SHIP + 20, 1.8, { rings: [0.2, 0.88], spokes: 12, phase: 30, hub: 0.2 }), { tone: "lo", className: "ss-in-lox" }) + [60, 180, 300].map((deg) => portOn(SHIP + 20, 1.8, 2.7, deg, 0.28)).join("") + S(G.ringBand((SHIP + 21.6) * U, (SHIP + 21.8) * U, 0.45 * U, 0.65 * U, VEH, P), { tone: "mid" }) + `<path class="ss-void" d="${G.circleOf(VEH, (SHIP + 21.6) * U, 0.45 * U, P)}"/>`);
-{
-  const rows = [[(SHIP + 33) * U, R], [NOSE_BASE * U, R]];
-  for (let i = 1; i <= 24; i++) {
-    const s = NOSE_BASE + ((M.stack - 0.4 - NOSE_BASE) * i) / 24;
-    rows.push([s * U, noseR(s) * U]);
-  }
-  aftOpening(BY.nose, cavity(facets(rows, VEH, { inward: true, steps: 96 })) + innerSeams(SHIP + 33.2, NOSE_BASE));
-}
 
 const tubeRings = (F, s0, s1, r, every) => {
   const lines = [];
@@ -496,9 +488,8 @@ window(
 window(BY.bch4, 45.5, 60.5, 6, 108, cavity(wall(41, 64.5), "ch4") + innerSeams(41, 64.5, "ch4") + cavity(dish(64.5, 1.8), "ch4"));
 window(BY.sch4, SHIP + 22.5, SHIP + 31, 14, 86, cavity(wall(SHIP + 20, SHIP + 33), "ch4") + innerSeams(SHIP + 20, SHIP + 33, "ch4") + cavity(dish(SHIP + 33, 1.8), "ch4"));
 
-function noseWindow(s0, s1, a0, a1, body) {
+function noseOutline(s0, s1, a0, a1, n = 24) {
   const ring = [];
-  const n = 24;
   for (let i = 0; i <= n; i++) ring.push(on(s0, noseR(s0), a0 + ((a1 - a0) * i) / n));
   for (let i = 0; i <= n; i++) {
     const s = s0 + ((s1 - s0) * i) / n;
@@ -509,9 +500,7 @@ function noseWindow(s0, s1, a0, a1, body) {
     const s = s1 - ((s1 - s0) * i) / n;
     ring.push(on(s, noseR(s), a0));
   }
-  const d = outlineOnSurface(ring);
-  clipped("nose", "inside", d, body);
-  add("nose", "inside", Ln(d, { tone: "mid" }));
+  return outlineOnSurface(ring);
 }
 
 function capsule(s0, s1, r) {
@@ -533,9 +522,118 @@ function strutOf(s, r0, r1, deg, size = 0.1) {
   return { depth: G.dot3(on(s, (r0 + r1) / 2, deg), V), svg: S(G.disc(r0 * U, r1 * U, size * U, F, P), { tone: "mid", crease: "none" }) };
 }
 
+// Payload bay. The camera looks up the ship's axis from the aft end (a·V < 0), so it sees the
+// underside of anything square to the axis; decks are cut along the same wedge as the hull window.
+const PAY_DEG = 122;
+const PAY_E = radial(PAY_DEG);
+const PAY_T = tangent(PAY_DEG);
+const PAYF = G.frameOf(on(0, 0, 0), VEH.a, PAY_E, PAY_T);
+const payAt = (e, t, s) => G.add3(G.add3(on(s, 0, 0), G.mul3(PAY_E, e * U)), G.mul3(PAY_T, t * U));
+const payBox = (e0, e1, t0, t1, s0, s1, style) => S(G.prismOf(PAYF, [[e0 * U, t0 * U], [e1 * U, t0 * U], [e1 * U, t1 * U], [e0 * U, t1 * U]], s0 * U, s1 * U, P), style);
+const item = (point, svg) => ({ depth: G.dot3(point, V), svg });
+const sorted = (list) => [...list].sort((a, b) => a.depth - b.depth).map((part) => part.svg).join("");
+const WEDGE = [8, 98];
+const DECK_CUT = [-20, 140];
+const SAT = { half: 3.5, side: 1.75, bus: 0.1, array: 0.13, pitch: 0.28, stacked: 25 };
+const SAT_BASE = SHIP + 35.6;
+const SAT_STACK = SHIP + 36.1;
+const SAT_TRAVEL = 5.5;
+const SLOT = { s0: SHIP + 35.45, s1: SHIP + 36.3, a0: PAY_DEG - 23, a1: PAY_DEG + 23 };
+const HATCH = { s0: SHIP + 35.8, s1: SHIP + 37.6, a0: PAY_DEG - 9, a1: PAY_DEG + 9 };
+const PORTS = [104, 114, 124, 134, 144].map((deg) => ({ s0: SHIP + 38.9, s1: SHIP + 39.9, a0: deg - 3, a1: deg + 3 }));
+
+function satSvg(s, e = 0, face = false) {
+  const top = s + SAT.bus;
+  // The underside faces the camera: phased-array antenna panels and a seam down the bus.
+  const square = (e0, e1, t0, t1) => k.pathOf([payAt(e + e0, t0, s), payAt(e + e1, t0, s), payAt(e + e1, t1, s), payAt(e + e0, t1, s)].map(at), true);
+  const panels = [-2.35, 0, 2.35].map((c) => square(c - 0.85, c + 0.85, -1.2, 1.2)).join("");
+  const under = face ? `<path class="ss-antenna" d="${panels}"/>` + Ln(panels, { tone: "lo" }) + Ln(k.pathOf([at(payAt(e - SAT.half + 0.2, 1.45, s)), at(payAt(e + SAT.half - 0.2, 1.45, s))]), { tone: "faint" }) : "";
+  return payBox(e - SAT.half + 0.04, e + SAT.half - 0.04, -SAT.side + 0.05, SAT.side - 0.05, top, top + SAT.array, { tone: "hi", className: "ss-sat-array" }) + payBox(e - SAT.half, e + SAT.half, -SAT.side, SAT.side, s, top, { tone: "hi", className: "ss-sat-bus", inner: under });
+}
+
+function deckSector(s0, s1, r) {
+  const F = G.frameOf(on(0, 0, 0), VEH.a, VEH.u, VEH.v);
+  const poly = [[0, 0]];
+  for (let deg = DECK_CUT[1]; deg <= DECK_CUT[0] + 360 + 0.01; deg += 5) poly.push([r * U * Math.cos(deg * DEG), r * U * Math.sin(deg * DEG)]);
+  return S(G.prismOf(F, poly, s0 * U, s1 * U, P), { tone: "hi", className: "ss-deck" });
+}
+
+const tubeAt = (e, t, s0, s1, r, style) => {
+  const F = G.frameOf(payAt(e, t, 0), VEH.a, PAY_E, PAY_T);
+  return S(G.disc(s0 * U, s1 * U, r * U, F, P), style);
+};
+
+function starlinkBay(movingSat) {
+  // Far to near: retention yoke, back columns, the stack, the satellite on the base, rails, front columns, base, beams.
+  const yoke = [];
+  for (const t of [-1.98, 1.98]) yoke.push(item(payAt(0, t, SHIP + 43.4), payBox(-2.42, 2.42, t - 0.12, t + 0.12, SHIP + 43.3, SHIP + 43.48, { tone: "hi", className: "ss-gunmetal" })));
+  for (const e of [-2.3, 2.3]) yoke.push(item(payAt(e, 0, SHIP + 43.4), payBox(e - 0.12, e + 0.12, -1.86, 1.86, SHIP + 43.3, SHIP + 43.48, { tone: "hi", className: "ss-gunmetal" })));
+  for (const e of [-1.2, 1.2]) yoke.push(item(payAt(e, 0, SHIP + 43.2), payBox(e - 0.25, e + 0.25, -0.6, 0.6, SHIP + 43.04, SHIP + 43.3, { tone: "hi", className: "ss-gunmetal" })));
+  const near = G.dot3(PAY_T, V) < 0 ? -1 : 1;
+  const column = (e, t) => {
+    const teeth = [];
+    for (let s = SAT_STACK; s < SHIP + 43.1; s += SAT.pitch) teeth.push(k.pathOf([at(payAt(e - 0.12, t - near * 0.12, s)), at(payAt(e + 0.12, t - near * 0.12, s))]));
+    return payBox(e - 0.12, e + 0.12, t - 0.12, t + 0.12, SHIP + 35.42, SHIP + 43.3, { tone: "hi", className: "ss-gunmetal", inner: Ln(teeth.join(""), { tone: "faint" }) });
+  };
+  const columns = (side) => [-2.3, 2.3].map((e) => item(payAt(e, side * 1.98, SHIP + 39), column(e, side * 1.98)));
+  const stack = [];
+  for (let i = 0; i < SAT.stacked; i++) stack.push(item(on(SAT_STACK + i * SAT.pitch, 0, 0), satSvg(SAT_STACK + i * SAT.pitch)));
+  const rails = [-1.15, 1.15].map((t) => item(payAt(0, t, SHIP + 35.5), payBox(-3.6, 4.0, t - 0.1, t + 0.1, SHIP + 35.42, SHIP + 35.6, { tone: "hi", className: "ss-gunmetal" })));
+  const frame = [];
+  for (const t of [-1.98, 1.98]) frame.push(item(payAt(0, t, SHIP + 35.3), payBox(-3.8, 3.75, t - 0.12, t + 0.12, SHIP + 35.2, SHIP + 35.42, { tone: "hi", className: "ss-gunmetal" })));
+  for (const e of [-3.65, -1.2, 1.2, 3.6]) frame.push(item(payAt(e, 0, SHIP + 35.3), payBox(e - 0.14, e + 0.14, -1.86, 1.86, SHIP + 35.2, SHIP + 35.42, { tone: "hi", className: "ss-gunmetal" })));
+  const base = sorted(frame);
+  const reach = Math.sqrt(4.45 ** 2 - 1.75 ** 2);
+  const beams = [-1.6, 1.6].map((t) => item(payAt(0, t, SHIP + 35), payBox(-reach, reach, t - 0.15, t + 0.15, SHIP + 34.85, SHIP + 35.2, { tone: "hi", className: "ss-gunmetal" })));
+  return [sorted(yoke), sorted(columns(-near)), sorted(stack), movingSat, sorted(rails), sorted(columns(near)), base, sorted(beams)].join("");
+}
+
+// A person 1.75 m tall standing on a deck; "up" is toward the nose.
+function person(e, t, floor) {
+  const F = G.frameOf(payAt(e, t, 0), VEH.a, PAY_E, PAY_T);
+  const suit = { tone: "hi", className: "ss-suit" };
+  const legs = S(G.disc((floor) * U, (floor + 0.85) * U, 0.17 * U, F, P), suit);
+  const body = S(G.disc((floor + 0.8) * U, (floor + 1.45) * U, 0.24 * U, F, P), suit);
+  const head = S(G.sphereOf(payAt(e, t, floor + 1.6), 0.15 * U, P), { tone: "hi", className: "ss-visor" });
+  return item(payAt(e, t, floor + 0.9), head + body + legs);
+}
+
+function crewBay() {
+  const cab = { tone: "hi", className: "ss-cabin" };
+  const DECKS = [{ s: SHIP + 35.0, r: 4.4 }, { s: SHIP + 38.2, r: 4.4 }, { s: SHIP + 41.4, r: noseR(SHIP + 41.5) - 0.12 }];
+  // Level C, under the header tanks: four crew quarters.
+  const quarters = [];
+  for (const [e0, e1, t0, t1] of [[-2.3, -1.1, -2.2, -0.15], [-2.3, -1.1, 0.15, 2.2], [-0.9, 0.3, -2.3, -1.2], [-0.9, 0.3, 1.2, 2.3]]) {
+    quarters.push(item(payAt((e0 + e1) / 2, (t0 + t1) / 2, SHIP + 42.4), payBox(e0, e1, t0, t1, SHIP + 41.58, SHIP + 43.1, cab)));
+  }
+  // Level B, the cabin: four seats facing the windows, a console and lockers on the far wall.
+  const cabin = [];
+  for (const t of [-1.35, -0.45, 0.45, 1.35]) {
+    cabin.push(item(payAt(0.35, t, SHIP + 38.8), payBox(0.0, 0.7, t - 0.3, t + 0.3, SHIP + 38.4, SHIP + 38.85, { tone: "hi", className: "ss-seat" })));
+    cabin.push(item(payAt(-0.1, t, SHIP + 39), payBox(-0.22, 0.0, t - 0.3, t + 0.3, SHIP + 38.4, SHIP + 39.6, { tone: "hi", className: "ss-seat" })));
+  }
+  cabin.push(item(payAt(2.6, 0.2, SHIP + 38.8), payBox(2.3, 2.9, -1.4, 1.6, SHIP + 38.4, SHIP + 39.3, cab)));
+  cabin.push(person(1.3, -0.9, SHIP + 38.4));
+  cabin.push(item(payAt(-3.2, 0, SHIP + 39.4), payBox(-3.55, -2.9, -1.3, 1.3, SHIP + 38.4, SHIP + 40.4, cab)));
+  // Level A: two airlocks side by side next to the crew hatch, and the ladder well.
+  const locks = [];
+  for (const t of [-1.3, 1.3]) {
+    const F = G.frameOf(payAt(-1.5, t, 0), VEH.a, PAY_E, PAY_T);
+    locks.push(item(payAt(-1.5, t, SHIP + 36.5), S(G.disc((SHIP + 35.2) * U, (SHIP + 37.7) * U, 1.15 * U, F, P), { ...cab, inner: Ln(G.arcOf(F, (SHIP + 37.3) * U, 1.15 * U, P) + G.arcOf(F, (SHIP + 35.6) * U, 1.15 * U, P), { tone: "faint" }) })));
+  }
+  locks.push(person(0.9, 0.2, SHIP + 35.2));
+  const ribs = [];
+  for (let deg = WEDGE[1] + 15; deg < WEDGE[0] + 360; deg += 45) ribs.push(strutOf(SHIP + 34.92, 0.3, 4.35, deg, 0.08));
+  return [sorted(quarters), deckSector(DECKS[2].s, DECKS[2].s + 0.18, DECKS[2].r), sorted(cabin), deckSector(DECKS[1].s, DECKS[1].s + 0.2, DECKS[1].r), sorted(locks), deckSector(DECKS[0].s, DECKS[0].s + 0.2, DECKS[0].r), sorted(ribs)].join("");
+}
+
+let payCount = 0;
+const variant = (name, body, shown) => `<g data-pay="${name}"${shown ? "" : ` display="none"`}>${body}</g>`;
+const rideSat = (body) => `<g class="it-sub" data-ride="nose-sat" data-m="${G.mul3(PAY_E, SAT_TRAVEL * U).map((v) => v.toFixed(2)).join(",")}">${body}</g>`;
+
 {
-  const noseRows = [[(SHIP + 33) * U, R]];
-  for (let i = 0; i <= 30; i++) {
+  const noseRows = [[(SHIP + 33) * U, R], [NOSE_BASE * U, R]];
+  for (let i = 1; i <= 30; i++) {
     const s = NOSE_BASE + ((M.stack - 0.4 - NOSE_BASE) * i) / 30;
     noseRows.push([s * U, noseR(s) * U]);
   }
@@ -552,8 +650,31 @@ function strutOf(s, r0, r1, deg, size = 0.1) {
   }
   parts.push({ depth: G.dot3(on((CH4_HEADER[0] + CH4_HEADER[1]) / 2, 0, 0), V), svg: S(capsule(...CH4_HEADER), { tone: "hi", className: "ss-methane" }) });
   parts.push({ depth: G.dot3(on((LOX_HEADER[0] + LOX_HEADER[1]) / 2, 0, 0), V), svg: S(capsule(...LOX_HEADER), { tone: "hi", className: "ss-oxygen" }) });
-  parts.sort((a, b) => a.depth - b.depth);
-  noseWindow(SHIP + 41.2, SHIP + 50.6, 8, 98, cavity(facets(noseRows, VEH, { inward: true, steps: 72 })) + parts.map((part) => part.svg).join(""));
+  const windowD = noseOutline(SHIP + 33.6, SHIP + 50.6, ...WEDGE);
+  const slotD = outlineOnSurface(patchOn(SLOT.s0, SLOT.s1, M.radius, M.radius, SLOT.a0, SLOT.a1, 18));
+  const aft = k.pathOf(Array.from({ length: 96 }, (_, i) => at(on(BY.nose.s0, M.radius, (i / 96) * 360))), true);
+  const clip = `ss-clip-${++clipCount}`;
+  const body =
+    cavity(facets(noseRows, VEH, { inward: true, steps: 96 })) +
+    innerSeams(SHIP + 33.2, NOSE_BASE) +
+    sorted(parts) +
+    variant("starlink", starlinkBay(rideSat(satSvg(SAT_BASE, 0, true))), true) +
+    variant("crew", crewBay(), false);
+  add("nose", "inside", `<clipPath id="${clip}"><path d="${windowD}"/><path d="${aft}"/><path data-pay="starlink" d="${slotD}"/></clipPath><g clip-path="url(#${clip})">${body}</g>`);
+  add("nose", "inside", Ln(windowD, { tone: "mid" }) + Ln(G.circleOf(VEH, BY.nose.s0 * U, R, P), { tone: "hi" }));
+
+  // Outside: the satellite's share beyond the plane that touches the hull at the door, a sweep from rest to full travel.
+  const sweep = [];
+  for (const e of [M.radius, SAT_TRAVEL + SAT.half]) for (const t of [-SAT.side, SAT.side]) for (const s of [SAT_BASE, SAT_BASE + SAT.bus + SAT.array]) sweep.push(at(payAt(e, t, s)));
+  const outClip = `ss-sat-out-${++payCount}`;
+  const slotDoor = `<path class="ss-door" data-door d="${slotD}"/>`;
+  const slotLines = Ln(slotD, { tone: "mid" }) + Ln(outlineOnSurface(patchOn(SLOT.s0 + 0.12, SLOT.s1 - 0.12, M.radius, M.radius, SLOT.a0 + 1.2, SLOT.a1 - 1.2, 18)), { tone: "faint" });
+  add("nose", "front", variant("starlink", `<clipPath id="${outClip}"><path d="${k.pathOf(G.hullOf(sweep), true)}"/></clipPath><g clip-path="url(#${outClip})">${rideSat(satSvg(SAT_BASE, 0, true))}</g>${slotDoor}${slotLines}`, true));
+  const hatchD = outlineOnSurface(patchOn(HATCH.s0, HATCH.s1, M.radius, M.radius, HATCH.a0, HATCH.a1, 8));
+  const hatchIn = outlineOnSurface(patchOn(HATCH.s0 + 0.15, HATCH.s1 - 0.15, M.radius, M.radius, HATCH.a0 + 1.4, HATCH.a1 - 1.4, 8));
+  const ports = PORTS.map((port) => noseOutline(port.s0, port.s1, port.a0, port.a1, 6));
+  const crewHull = `<path class="ss-door" d="${hatchD}"/>` + Ln(hatchD, { tone: "mid" }) + Ln(hatchIn, { tone: "faint" }) + ports.map((d) => `<path class="ss-glass" d="${d}"/>` + Ln(d, { tone: "mid" })).join("");
+  add("nose", "front", variant("crew", crewHull, false));
 }
 
 function clampsOf(s0, s1, deg, every, { width = 0.35, height = 0.35 } = {}) {
@@ -668,12 +789,7 @@ add("nose", "back", flapOf(SHIP + 40, 250, FWD_FLAP, 0.2));
 add("nose", "front", flapOf(SHIP + 40, 110, FWD_FLAP, 0.2));
 add("slox", "front", stripOf(SHIP + 0.4, SHIP + 19.6, 140, { width: 0.3, height: 0.3 }) + clampsOf(SHIP + 0.4, SHIP + 19.6, 140, M.ring * 2, { width: 0.3, height: 0.3 }));
 add("sch4", "front", stripOf(SHIP + 20.4, SHIP + 32.6, 140, { width: 0.3, height: 0.3 }) + clampsOf(SHIP + 20.4, SHIP + 32.6, 140, M.ring * 2, { width: 0.3, height: 0.3 }));
-add("nose", "front", stripOf(SHIP + 33.4, SHIP + 38.2, 140, { width: 0.3, height: 0.3 }));
-{
-  const door = outlineOnSurface(patchOn(SHIP + 34.2, SHIP + 37.6, M.radius, M.radius, 112, 128, 8));
-  const inner = outlineOnSurface(patchOn(SHIP + 34.5, SHIP + 37.3, M.radius, M.radius, 113.2, 126.8, 8));
-  add("nose", "front", `<path class="ss-door" d="${door}"/>` + Ln(door, { tone: "mid" }) + Ln(inner, { tone: "faint" }));
-}
+add("nose", "front", stripOf(SHIP + 36.6, SHIP + 38.2, 140, { width: 0.3, height: 0.3 }));
 
 function cradle(id, s) {
   const x = xOf(s);
@@ -796,9 +912,9 @@ const FIG_SL = engineFigure(RAPTOR, SL_LABEL, scaleFor(RAPTOR));
 const FIG_SL_PAIR = engineFigure(RAPTOR, SL_LABEL, PAIR_SCALE);
 const FIG_VAC = engineFigure(RVAC, "A Raptor Vacuum engine: the same powerhead and chamber with a much larger nozzle, its lower part an uncooled extension.", PAIR_SCALE);
 
-function boxOf(piece, extra = 0) {
+function boxOf(piece, extra = 0, more = []) {
   const span = { bch4: 0.7 + FIN_SPAN, slox: 4.4, nose: 3.0 }[piece.id] ?? 0.8;
-  const points = [];
+  const points = more.map(at);
   for (const s of [piece.s0 - extra, piece.s1]) for (let d = 0; d < 360; d += 10) points.push(at(on(s, M.radius + span, d)));
   for (const s of piece.cradles) points.push(at([xOf(s), 27, RAIL_H]), at([xOf(s), -27, RAIL_H]));
   const xs = points.map(([x]) => x);
@@ -810,101 +926,238 @@ const bLox = lox(M.boosterProp);
 const bCh4 = ch4(M.boosterProp);
 const sLox = lox(M.shipProp);
 const sCh4 = ch4(M.shipProp);
-const SAY = {
-  beng: `33 Raptor 3 · 13 gimbal, 20 fixed · ${fmt(33 * M.raptorSea)} tf`,
-  blox: `booster LOX tank · ≈${fmt(t(bLox))} t · methane tube runs through`,
-  bch4: `booster methane · ≈${fmt(t(bCh4))} t · 3 grid fins · vented interstage`,
-  slox: `ship · 3 × ${M.raptorSea} tf sea level + 3 × ${M.raptorVac} tf vacuum`,
-  sch4: `ship methane tank · ≈${fmt(t(sCh4))} t`,
-  nose: `payload bay · pez door · landing header tanks`,
-};
-const IDLE = `${M.stack} m · 39 Raptor 3 · ${fmt(M.boosterProp + M.shipProp)} t propellant`;
 const ORDER = ["beng", "blox", "bch4", "slox", "sch4", "nose"];
-const SECTIONS = {
-  beng: {
-    title: "33 Raptors and aft skirt",
-    text: `Thirty-three Raptor 3 engines in three rings. The 3 in the centre and the 10 around them gimbal to steer, and relight for the boostback and landing burns; the outer 20 are fixed. Raptor 3 carries inside its housing the plumbing that Raptor 2 had on the outside, so V3 boosters no longer need a shroud around each engine. Take the stack apart and the engines slide out of the skirt, leaving the thrust puck and their mounts.`,
-    specs: [["Engines", "33 Raptor 3"], ["Thrust", `${M.raptorSea} tf each · ≈${fmt(33 * M.raptorSea)} tf in all`], ["Steering", "13 gimbal · 20 fixed"], ["Mass", "1,525 kg per engine"]],
-    figs: ["sl"],
+const LIFTOFF = fmt(33 * M.raptorSea);
+const TOTAL = fmt(M.boosterProp + M.shipProp);
+const FLIGHT14 = 26;
+
+// Every word on the page, in both languages. The page opens in English and live.js swaps in the reader's choice.
+const TEXT = {
+  en: {
+    pageTitle: "Starship V3, taken apart",
+    langName: "English",
+    ui: {
+      fig: "Fig 1",
+      figTitle: "Starship V3 · full stack",
+      hint: "Scroll to zoom · drag to pan",
+      zoomIn: "Zoom in",
+      zoomOut: "Zoom out",
+      reset: "Reset",
+      apart: "Take apart",
+      together: "Put together",
+      zoomHere: "Zoom the drawing here",
+      panel: "Section details",
+      stage: "Starship V3 on a stacking jig. Hover or use the arrow keys to pick a section, Space to take it apart, plus and minus to zoom, Escape to reset.",
+      keyLox: "Liquid oxygen",
+      keyCh4: "Liquid methane",
+      keyTile: "Heat-shield tiles",
+      keyBronze: "Raptor nozzles",
+      figSL: "Raptor 3 · sea level",
+      figVac: "Raptor Vacuum",
+      payLabel: "Payload",
+      payStarlink: "Starlink",
+      payCrew: "Crew",
+      langSwitch: "中文",
+      langSwitchLabel: "切换到中文",
+      taking: "taking it apart",
+      stacking: "stacking",
+      apartIdle: "six sections · 39 engines out",
+      assembled: "Assembled",
+      apartSay: "Apart: six sections and their engines",
+      caption: `Starship V3 stands ${M.stack} m tall: a ${M.booster} m Super Heavy booster under a ${M.ship} m ship, both 9 m across and built from stainless-steel rings ${M.ring} m tall. Oxygen spaces are tinted blue and methane amber; in each stage the methane tank sits above the oxygen tank, so the methane reaches the engines through a tube down the middle of the oxygen tank (the cut-open windows). Take it apart and the six sections slide apart on their cradles, then the 33 + 6 engines slide out of their skirts. The ship lies belly up so its black heat-shield tiles and flaps show. Section 06 switches the payload bay between Starlink satellites and a crew cabin. Numbers follow SpaceX's May 2026 figures as listed on Wikipedia: Raptor 3 at ${M.raptorSea} tf (${M.raptorVac} tf vacuum), ${fmt(M.boosterProp)} t of propellant in the booster and about ${fmt(M.shipProp)} t in the ship, split here at Raptor's ${M.mixture}:1 oxygen-to-methane ratio. Engines are simplified, and proportions inside the tanks are approximate.`,
+      label: "SpaceX Starship V3 drawn as a full stack lying on a stacking jig: a long base plate with two rails, a metre ruler and cradles that carry six sections. From the engine end: the booster's aft skirt with 33 Raptor engines, its oxygen tank cut open to show the amber methane transfer tube, its methane tank with three grid fins and a vented interstage, then the ship's oxygen tank with six Raptors, four downcomers and two aft flaps, its methane tank, and the payload bay and nose, cut open to show the payload and the header tanks. Oxygen spaces are tinted blue and methane amber; the heat-shield tiles are black.",
+    },
+    idle: `${M.stack} m · 39 Raptor 3 · ${TOTAL} t propellant`,
+    say: {
+      beng: `33 Raptor 3 · 13 gimbal, 20 fixed · ${LIFTOFF} tf`,
+      blox: `booster LOX tank · ≈${fmt(t(bLox))} t · methane tube runs through`,
+      bch4: `booster methane · ≈${fmt(t(bCh4))} t · 3 grid fins · vented interstage`,
+      slox: `ship · 3 × ${M.raptorSea} tf sea level + 3 × ${M.raptorVac} tf vacuum`,
+      sch4: `ship methane tank · ≈${fmt(t(sCh4))} t`,
+      nose: { starlink: `payload bay · ${FLIGHT14} Starlink V3 on the PEZ dispenser`, crew: "payload bay · crew cabin · 2 airlocks · windows" },
+    },
+    overview: {
+      title: "Starship V3",
+      text: `Two stainless-steel stages, both 9 m across: the ${M.booster} m Super Heavy booster and the ${M.ship} m ship. Each keeps its methane above its oxygen, so the methane has to run through the oxygen tank to reach the engines. Point at a section or pick one below to see it close up; zoom with the scroll wheel or a pinch, and drag to pan. Section 06 switches the payload between satellites and crew.`,
+      specs: [["Height", `${M.stack} m`], ["Engines", "33 + 6 Raptor 3"], ["Propellant", `${fmt(M.boosterProp)} t + ≈${fmt(M.shipProp)} t`], ["Liftoff thrust", `≈${LIFTOFF} tf`]],
+    },
+    sections: {
+      beng: {
+        title: "33 Raptors and aft skirt",
+        text: "Thirty-three Raptor 3 engines in three rings. The 3 in the centre and the 10 around them gimbal to steer, and relight for the boostback and landing burns; the outer 20 are fixed. Raptor 3 carries inside its housing the plumbing that Raptor 2 had on the outside, so V3 boosters no longer need a shroud around each engine. Take the stack apart and the engines slide out of the skirt, leaving the thrust puck and their mounts.",
+        specs: [["Engines", "33 Raptor 3"], ["Thrust", `${M.raptorSea} tf each · ≈${LIFTOFF} tf in all`], ["Steering", "13 gimbal · 20 fixed"], ["Mass", "1,525 kg per engine"]],
+      },
+      blox: {
+        title: "Booster oxygen tank",
+        text: "The biggest tank on the vehicle, full of liquid oxygen. The methane stored above it reaches the engines through a large transfer tube down its centre, shown in amber in the cut-open window. On V3 the aft dome under it, facing the engines, carries metallic heat-shield tiles.",
+        specs: [["Liquid oxygen", `≈${fmt(t(bLox))} t`], ["Walls", `steel rings ${M.ring} m tall, about 4 mm thick`], ["Through it", "the methane transfer tube"]],
+      },
+      bch4: {
+        title: "Booster methane tank, grid fins, interstage",
+        text: "Liquid methane, above the oxygen and separated from it by the common dome. Three grid fins near the top steer the booster back to the tower, whose arms catch it by them. On V3 the vented hot-staging interstage is built into this tank and stays with the booster instead of being dropped.",
+        specs: [["Liquid methane", `≈${fmt(t(bCh4))} t`], ["Grid fins", "3 · about 1.5× earlier ones · 90/90/180°"], ["Interstage", "vented, built in, kept"]],
+      },
+      slox: {
+        title: "Ship oxygen tank and six Raptors",
+        text: "The ship's oxygen tank sits over its six engines. The three sea-level Raptors in the centre gimbal for steering and landing; the three Raptor Vacuum engines with their large fixed nozzles do most of the work in space. One central downcomer feeds methane to the sea-level engines and one more feeds each vacuum engine. The two aft flaps steer the ship as it falls belly first.",
+        specs: [["Liquid oxygen", `≈${fmt(t(sLox))} t`], ["Sea level", `3 × ${M.raptorSea} tf, gimballed`], ["Vacuum", `3 × ${M.raptorVac} tf, fixed`], ["Downcomers", "4"]],
+      },
+      sch4: {
+        title: "Ship methane tank",
+        text: "The ship's methane, above its oxygen. The common dome at its bottom is where the four downcomers begin their run through the oxygen tank to the engines.",
+        specs: [["Liquid methane", `≈${fmt(t(sCh4))} t`], ["Heat shield", "hexagonal tiles on the windward half"]],
+      },
+      nose: {
+        title: "Payload bay and nose",
+        pay: {
+          starlink: {
+            text: `Set up for Starlink. The satellites lie flat in a stack on the PEZ dispenser, a rack mounted on the methane tank's forward dome. One at a time, rails in the dispenser's base push the bottom satellite out through a slot-shaped door, and the stack is lowered to put the next one on the base. Ship 41 released ${FLIGHT14} Starlink V3 satellites this way on Flight 14 in September 2026. In the tip of the nose are the landing header tanks, oxygen in blue and methane in amber.`,
+            specs: [["Satellites", "Starlink V3 · about 2 t each"], ["Per flight", `${FLIGHT14} on Flight 14 · up to 60 planned`], ["Door", "a slot level with the dispenser base"], ["Header tanks", "oxygen + methane, in the nose"]],
+          },
+          crew: {
+            text: "Set up for crew. No crewed Starship has flown yet; this follows SpaceX's renders of the lunar lander (Starship HLS): crew quarters at the top, a cabin with a band of windows, and two airlocks side by side below it. Floors are square to the ship's axis, so with the ship lying on its side they stand on edge, and the two people (1.75 m, for scale) are drawn lying down. The lunar lander also drops the flaps and heat shield and adds landing legs; this drawing keeps the ship as it is.",
+            specs: [["Crew", "up to 100 planned"], ["Levels", "quarters · cabin with windows · airlocks"], ["Airlocks", "2, side by side (lunar lander)"], ["Status", "not flown · layout illustrative"]],
+          },
+        },
+      },
+    },
   },
-  blox: {
-    title: "Booster oxygen tank",
-    text: `The biggest tank on the vehicle, full of liquid oxygen. The methane stored above it reaches the engines through a large transfer tube down its centre, shown in amber in the cut-open window. On V3 the aft dome under it, facing the engines, carries metallic heat-shield tiles.`,
-    specs: [["Liquid oxygen", `≈${fmt(t(bLox))} t`], ["Walls", `steel rings ${M.ring} m tall, about 4 mm thick`], ["Through it", "the methane transfer tube"]],
-    figs: [],
+  zh: {
+    pageTitle: "拆开的星舰 V3",
+    langName: "中文",
+    ui: {
+      fig: "图 1",
+      figTitle: "星舰 V3 · 全箭",
+      hint: "滚轮缩放 · 拖动平移",
+      zoomIn: "放大",
+      zoomOut: "缩小",
+      reset: "复位",
+      apart: "拆开",
+      together: "装回",
+      zoomHere: "把图放大到这一段",
+      panel: "分段详情",
+      stage: "放在堆叠工装上的星舰 V3。悬停或用方向键选择分段，空格键拆开，加号和减号缩放，Esc 复位。",
+      keyLox: "液氧",
+      keyCh4: "液态甲烷",
+      keyTile: "隔热瓦",
+      keyBronze: "猛禽喷管",
+      figSL: "猛禽 3 · 海平面版",
+      figVac: "真空版猛禽",
+      payLabel: "载荷",
+      payStarlink: "Starlink 卫星",
+      payCrew: "载人",
+      langSwitch: "English",
+      langSwitchLabel: "Switch to English",
+      taking: "正在拆开",
+      stacking: "正在装回",
+      apartIdle: "六个分段 · 39 台发动机已滑出",
+      assembled: "已装好",
+      apartSay: "已拆开：六个分段和它们的发动机",
+      caption: `星舰 V3 高 ${M.stack} 米：${M.booster} 米的超重型助推器上面是 ${M.ship} 米的飞船，两者直径都是 9 米，都由每段高 ${M.ring} 米的不锈钢环焊成。液氧空间涂成蓝色，甲烷涂成琥珀色；每一级都是甲烷箱在上、液氧箱在下，所以甲烷要经过液氧箱正中的一根管道才能到达发动机（见剖开的窗口）。拆开后，六个分段在托架上滑开，接着 33 + 6 台发动机从尾裙里滑出。飞船腹部朝上摆放，好让黑色隔热瓦和襟翼露出来。第 06 段可以把载荷舱切换成 Starlink 卫星或载人舱。数字采用维基百科所列的 SpaceX 2026 年 5 月数据：猛禽 3 推力 ${M.raptorSea} 吨力（真空版 ${M.raptorVac} 吨力），助推器装 ${fmt(M.boosterProp)} 吨推进剂，飞船约 ${fmt(M.shipProp)} 吨，按猛禽 ${M.mixture}:1 的氧燃比拆分。发动机做了简化，贮箱内部比例是近似的。`,
+      label: "SpaceX 星舰 V3 全箭平放在堆叠工装上：一块带两条导轨的长底板、一把米尺，以及托着六个分段的托架。从发动机一端起：助推器尾裙和 33 台猛禽发动机；剖开的助推器液氧箱，露出琥珀色的甲烷输送管；带三片栅格舵和排气级间段的甲烷箱；然后是飞船的液氧箱、六台猛禽、四根输送管和两片后襟翼；飞船甲烷箱；以及剖开的载荷舱和头锥，露出载荷和着陆贮箱。液氧空间为蓝色，甲烷为琥珀色，隔热瓦为黑色。",
+    },
+    idle: `${M.stack} 米 · 39 台猛禽 3 · ${TOTAL} 吨推进剂`,
+    say: {
+      beng: `33 台猛禽 3 · 13 台摆动、20 台固定 · ${LIFTOFF} 吨力`,
+      blox: `助推器液氧箱 · 约 ${fmt(t(bLox))} 吨 · 甲烷管从中穿过`,
+      bch4: `助推器甲烷 · 约 ${fmt(t(bCh4))} 吨 · 3 片栅格舵 · 排气级间段`,
+      slox: `飞船 · 3 × ${M.raptorSea} 吨力海平面版 + 3 × ${M.raptorVac} 吨力真空版`,
+      sch4: `飞船甲烷箱 · 约 ${fmt(t(sCh4))} 吨`,
+      nose: { starlink: `载荷舱 · PEZ 分配器上的 ${FLIGHT14} 颗 Starlink V3`, crew: "载荷舱 · 乘员舱 · 2 个气闸舱 · 舷窗" },
+    },
+    overview: {
+      title: "星舰 V3",
+      text: `两级都是直径 9 米的不锈钢箭体：${M.booster} 米的超重型助推器，和 ${M.ship} 米的飞船。每一级都把甲烷放在液氧上面，所以甲烷必须穿过液氧箱才能到达发动机。把鼠标移到某一段上，或在下面的列表里选一段，就能看到它的近景；用滚轮或双指捏合缩放，拖动平移。第 06 段可以在卫星和载人两种载荷之间切换。`,
+      specs: [["高度", `${M.stack} 米`], ["发动机", "33 + 6 台猛禽 3"], ["推进剂", `${fmt(M.boosterProp)} 吨 + 约 ${fmt(M.shipProp)} 吨`], ["起飞推力", `约 ${LIFTOFF} 吨力`]],
+    },
+    sections: {
+      beng: {
+        title: "33 台猛禽与尾裙",
+        text: "33 台猛禽 3 发动机排成三圈。中间 3 台和外面一圈 10 台可以摆动来控制方向，并在返航和着陆时重新点火；最外圈 20 台是固定的。猛禽 3 把猛禽 2 外露的管路都收进了壳体内部，所以 V3 助推器不再需要给每台发动机加防护罩。拆开后，发动机会从尾裙里滑出来，留下推力盘和各自的安装座。",
+        specs: [["发动机", "33 台猛禽 3"], ["推力", `每台 ${M.raptorSea} 吨力 · 合计约 ${LIFTOFF} 吨力`], ["转向", "13 台摆动 · 20 台固定"], ["质量", "每台 1,525 千克"]],
+      },
+      blox: {
+        title: "助推器液氧箱",
+        text: "全箭最大的贮箱，装满液氧。储存在上方的甲烷通过贯穿其中心的一根大输送管流到发动机，剖开窗口里那根琥珀色的管子就是它。V3 在它下方朝向发动机的后穹顶上贴了金属隔热瓦。",
+        specs: [["液氧", `约 ${fmt(t(bLox))} 吨`], ["箱壁", `不锈钢环，每段高 ${M.ring} 米，厚约 4 毫米`], ["从中穿过", "甲烷输送管"]],
+      },
+      bch4: {
+        title: "助推器甲烷箱、栅格舵与级间段",
+        text: "液态甲烷在液氧上方，两者之间隔着共底。靠近顶端的三片栅格舵引导助推器飞回发射塔，塔上的机械臂正是托住栅格舵把助推器接住的。V3 把带排气孔的热分离级间段做进了这个贮箱，它留在助推器上，不再抛掉。",
+        specs: [["液态甲烷", `约 ${fmt(t(bCh4))} 吨`], ["栅格舵", "3 片 · 约为以前的 1.5 倍 · 间隔 90/90/180°"], ["级间段", "带排气孔，一体化，不抛弃"]],
+      },
+      slox: {
+        title: "飞船液氧箱与六台猛禽",
+        text: "飞船的液氧箱位于六台发动机上方。中间三台海平面版猛禽可以摆动，负责转向和着陆；外圈三台真空版猛禽的大喷管是固定的，在太空中承担主要工作。中心的一根输送管把甲烷送给海平面发动机，每台真空发动机另有一根。两片后襟翼在飞船腹部朝下下落时控制姿态。",
+        specs: [["液氧", `约 ${fmt(t(sLox))} 吨`], ["海平面版", `3 × ${M.raptorSea} 吨力，可摆动`], ["真空版", `3 × ${M.raptorVac} 吨力，固定`], ["输送管", "4 根"]],
+      },
+      sch4: {
+        title: "飞船甲烷箱",
+        text: "飞船的甲烷，在液氧上方。它底部的共底是四根输送管的起点，它们从这里穿过液氧箱通往发动机。",
+        specs: [["液态甲烷", `约 ${fmt(t(sCh4))} 吨`], ["隔热瓦", "六边形，贴在迎风的半边"]],
+      },
+      nose: {
+        title: "载荷舱与头锥",
+        pay: {
+          starlink: {
+            text: `这是 Starlink 构型。卫星平躺着叠成一摞，放在 PEZ 分配器上，分配器装在甲烷箱的前穹顶上。底座上的导轨每次把最下面一颗卫星从缝隙状的舱门推出去，然后整摞下降一格，把下一颗放到底座上。2026 年 9 月的第 14 次飞行中，Ship 41 就这样释放了 ${FLIGHT14} 颗 Starlink V3 卫星。头锥尖端里是着陆用的小贮箱（header tank），蓝色装液氧，琥珀色装甲烷。`,
+            specs: [["卫星", "Starlink V3 · 每颗约 2 吨"], ["每次飞行", `第 14 次飞行 ${FLIGHT14} 颗 · 计划最多 60 颗`], ["舱门", "与分配器底座齐平的一道缝"], ["着陆贮箱", "液氧 + 甲烷，位于头锥"]],
+          },
+          crew: {
+            text: "这是载人构型。载人星舰还没有飞过，这里参照 SpaceX 公布的登月版（Starship HLS）效果图：最上层是乘员舱室，下面是带一圈舷窗的座舱，再下面是并排的两个气闸舱。各层地板都垂直于箭体轴线，箭体平躺时它们就像竖起来的隔板，两个人（身高 1.75 米，作比例参考）也是躺着画的。登月版还会去掉襟翼和隔热瓦、加装着陆腿；这张图保留了飞船原样。",
+            specs: [["乘员", "计划最多 100 人"], ["分层", "舱室 · 带舷窗的座舱 · 气闸舱"], ["气闸舱", "2 个，并排（登月版）"], ["状态", "尚未飞行 · 布局为示意"]],
+          },
+        },
+      },
+    },
   },
-  bch4: {
-    title: "Booster methane tank, grid fins, interstage",
-    text: `Liquid methane, above the oxygen and separated from it by the common dome. Three grid fins near the top steer the booster back to the tower, whose arms catch it by them. On V3 the vented hot-staging interstage is built into this tank and stays with the booster instead of being dropped.`,
-    specs: [["Liquid methane", `≈${fmt(t(bCh4))} t`], ["Grid fins", "3 · about 1.5× earlier ones · 90/90/180°"], ["Interstage", "vented, built in, kept"]],
-    figs: [],
-  },
-  slox: {
-    title: "Ship oxygen tank and six Raptors",
-    text: `The ship's oxygen tank sits over its six engines. The three sea-level Raptors in the centre gimbal for steering and landing; the three Raptor Vacuum engines with their large fixed nozzles do most of the work in space. One central downcomer feeds methane to the sea-level engines and one more feeds each vacuum engine. The two aft flaps steer the ship as it falls belly first.`,
-    specs: [["Liquid oxygen", `≈${fmt(t(sLox))} t`], ["Sea level", `3 × ${M.raptorSea} tf, gimballed`], ["Vacuum", `3 × ${M.raptorVac} tf, fixed`], ["Downcomers", "4"]],
-    figs: ["pair", "vac"],
-  },
-  sch4: {
-    title: "Ship methane tank",
-    text: `The ship's methane, above its oxygen. The common dome at its bottom is where the four downcomers begin their run through the oxygen tank to the engines.`,
-    specs: [["Liquid methane", `≈${fmt(t(sCh4))} t`], ["Heat shield", "hexagonal tiles on the windward half"]],
-    figs: [],
-  },
-  nose: {
-    title: "Payload bay and nose",
-    text: `Starlink satellites leave through the slot-shaped payload door. The two forward flaps are smaller than the aft pair and sit toward the leeward side. Inside the nose (cut open here) are the landing header tanks, oxygen in blue and methane in amber, which feed the engines for the landing burn when the main tanks are nearly empty.`,
-    specs: [["Header tanks", "oxygen + methane, in the nose since Ship 24"], ["Flaps", "2 forward · 2 aft"], ["Heat shield", "about 18,000 tiles · rated to 1,400 °C"]],
-    figs: [],
-  },
-};
-const OVERVIEW = {
-  title: "Starship V3",
-  text: `Two stainless-steel stages, both 9 m across: the ${M.booster} m Super Heavy booster and the ${M.ship} m ship. Each keeps its methane above its oxygen, so the methane has to run through the oxygen tank to reach the engines. Point at a section or pick one below to see it close up; zoom with the scroll wheel or a pinch, and drag to pan.`,
-  specs: [["Height", `${M.stack} m`], ["Engines", "33 + 6 Raptor 3"], ["Propellant", `${fmt(M.boosterProp)} t + ≈${fmt(M.shipProp)} t`], ["Liftoff thrust", `≈${fmt(33 * M.raptorSea)} tf`]],
 };
 
-const LABEL =
-  "SpaceX Starship V3 drawn as a full stack lying on a stacking jig: a long base plate with two rails, a metre ruler and cradles that carry six sections. From the engine end: the booster's aft skirt with 33 Raptor engines, its oxygen tank cut open to show the amber methane transfer tube, its methane tank with three grid fins and a vented interstage, then the ship's oxygen tank with six Raptors, four downcomers and two aft flaps, its methane tank, and the payload bay and nose with two forward flaps and the header tanks. Oxygen spaces are tinted blue and methane amber; the heat-shield tiles are black.";
+const LABEL = TEXT.en.ui.label;
 const svg = k.figureSvg({ width: W, height: H, label: LABEL, body: [`<g id="ss-scene"><g class="ss-stand">${stand.join("")}</g><g class="ss-stack">${groups.join("")}</g></g>`], className: "ss-main" });
 const unit = (vector) => {
   const o = at([0, 0, 0]);
   const p = at(vector);
   return [p[0] - o[0], p[1] - o[1]];
 };
+const FIGS = { beng: ["sl"], slox: ["pair", "vac"] };
 const DATA = {
   W,
   H,
   EX: unit([1, 0, 0]),
+  EY: unit([0, 1, 0]),
+  EZ: unit([0, 0, 1]),
   order: ORDER,
   stagger: ["beng", "nose", "blox", "sch4", "bch4", "slox"],
   subs: { "beng-e": "beng", "slox-e": "slox" },
+  shows: { "nose-sat": "nose" },
   spring: { stagger: 0.06, stiffness: 42, damping: 12.5, substeps: 4 },
   moves: Object.fromEntries(PIECES.map((piece) => [piece.id, moveOf(piece)[0]])),
-  boxes: Object.fromEntries(PIECES.map((piece) => [piece.id, { rest: boxOf(piece), pulled: boxOf(piece, PULL[piece.id] ? PULL[piece.id] + 0.4 : 0) }])),
-  pieces: Object.fromEntries(PIECES.map((piece) => [piece.id, { say: SAY[piece.id] }])),
-  sections: Object.fromEntries(ORDER.map((id, index) => [id, { ...SECTIONS[id], num: String(index + 1).padStart(2, "0") }])),
-  overview: OVERVIEW,
-  idle: IDLE,
+  boxes: Object.fromEntries(PIECES.map((piece) => [piece.id, { rest: boxOf(piece), pulled: piece.id === "nose" ? boxOf(piece, 0, [-1, 1].map((t) => payAt(SAT_TRAVEL + SAT.half + 0.3, t * SAT.side, SAT_BASE))) : boxOf(piece, PULL[piece.id] ? PULL[piece.id] + 0.4 : 0) }])),
+  sections: Object.fromEntries(ORDER.map((id, index) => [id, { num: String(index + 1).padStart(2, "0"), figs: FIGS[id] ?? [] }])),
+  t: TEXT,
 };
 
+const en = TEXT.en;
 const esc = (text) => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const tx = (key) => `data-t="${key}">${esc(en.ui[key])}`;
 const specsHtml = (list) => list.map(([key, value]) => `<dt>${esc(key)}</dt><dd>${esc(value)}</dd>`).join("");
-const PARTS = ORDER.map((id, index) => `<button type="button" class="ss-part" data-part="${id}"><span class="ss-num">${String(index + 1).padStart(2, "0")}</span>${esc(SECTIONS[id].title)}</button>`).join("");
-const KEYS = [["var(--ss-lox)", "Liquid oxygen"], ["var(--ss-ch4)", "Liquid methane"], ["var(--ss-tile-key)", "Heat-shield tiles"], ["var(--ss-bronze-key)", "Raptor nozzles"]]
-  .map(([colour, label]) => `<span class="ss-key"><i style="--key:${colour}"></i>${label}</span>`)
+const PARTS = ORDER.map((id, index) => `<button type="button" class="ss-part" data-part="${id}"><span class="ss-num">${String(index + 1).padStart(2, "0")}</span><span class="ss-part-name">${esc(en.sections[id].title)}</span></button>`).join("");
+const KEYS = [["var(--ss-lox)", "keyLox"], ["var(--ss-ch4)", "keyCh4"], ["var(--ss-tile-key)", "keyTile"], ["var(--ss-bronze-key)", "keyBronze"]]
+  .map(([colour, key]) => `<span class="ss-key"><i style="--key:${colour}"></i><span ${tx(key)}</span></span>`)
   .join("");
-const corners = `<div class="iso-plate-corners" aria-hidden="true"><span class="iso-plate-corner" data-corner="fig">Fig 1</span><span class="iso-plate-corner" data-corner="title">Starship V3 · full stack</span><span class="iso-plate-corner" data-corner="readout" data-readout>${IDLE}</span></div>`;
-const stage = `<div class="ss-stage" tabindex="0" role="slider" aria-label="Starship V3 on a stacking jig. Hover or use the arrow keys to pick a section, Space to take it apart, plus and minus to zoom, Escape to reset." aria-valuemin="0" aria-valuemax="${ORDER.length}" aria-valuenow="0" aria-valuetext="Assembled">${svg}</div>`;
-const controls = `<div class="ss-controls"><button type="button" class="ss-button" data-icon data-zoom="out" aria-label="Zoom out">−</button><span class="ss-zoom-level" data-zoom-level>100%</span><button type="button" class="ss-button" data-icon data-zoom="in" aria-label="Zoom in">+</button><button type="button" class="ss-button" data-zoom="reset">Reset</button><button type="button" class="ss-button" data-apart aria-pressed="false">Take apart</button><span class="ss-hint">Scroll to zoom · drag to pan</span></div>`;
-const extra = `<div class="ss-extra" data-p-extra><div class="ss-extra-figs"><figure class="ss-extra-fig" data-fig="sl">${FIG_SL}<figcaption>Raptor 3 · sea level</figcaption></figure><figure class="ss-extra-fig" data-fig="pair" hidden>${FIG_SL_PAIR}<figcaption>Raptor 3 · sea level</figcaption></figure><figure class="ss-extra-fig" data-fig="vac" hidden>${FIG_VAC}<figcaption>Raptor Vacuum</figcaption></figure></div></div>`;
-const panel = `<aside class="iso-plate ss-panel" aria-label="Section details"><h2 class="ss-panel-head"><span class="ss-panel-num" data-p-num>V3</span><span class="ss-panel-title" data-p-title>${esc(OVERVIEW.title)}</span></h2><div class="ss-lens-box" data-p-lens hidden><svg class="iso-svg ss-lens" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="#ss-scene"/></svg></div>${extra}<p class="ss-text" data-p-text>${esc(OVERVIEW.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(OVERVIEW.specs)}</dl><button type="button" class="ss-button ss-zoom-here" data-zoom-here hidden>Zoom the drawing here</button><div class="ss-keys">${KEYS}</div><div class="ss-parts">${PARTS}</div></aside>`;
-const caption = `Starship V3 stands ${M.stack} m tall: a ${M.booster} m Super Heavy booster under a ${M.ship} m ship, both 9 m across and built from stainless-steel rings ${M.ring} m tall. Oxygen spaces are tinted blue and methane amber; in each stage the methane tank sits above the oxygen tank, so the methane reaches the engines through a tube down the middle of the oxygen tank (the cut-open windows). Take it apart and the six sections slide apart on their cradles, then the 33 + 6 engines slide out of their skirts. The ship lies belly up so its black heat-shield tiles and flaps show. Numbers follow SpaceX's May 2026 figures as listed on Wikipedia: Raptor 3 at ${M.raptorSea} tf (${M.raptorVac} tf vacuum), ${fmt(M.boosterProp)} t of propellant in the booster and about ${fmt(M.shipProp)} t in the ship, split here at Raptor's ${M.mixture}:1 oxygen-to-methane ratio. Engines are simplified, and proportions inside the tanks are approximate.`;
-const body = `<figure class="iso-figure ss"><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption">${caption}</span></figcaption></figure><span class="ss-live" aria-live="polite" data-live></span>`;
+const corners = `<div class="iso-plate-corners" aria-hidden="true"><span class="iso-plate-corner" data-corner="fig" ${tx("fig")}</span><span class="iso-plate-corner" data-corner="title" ${tx("figTitle")}</span><span class="iso-plate-corner" data-corner="readout" data-readout>${esc(en.idle)}</span></div>`;
+const stage = `<div class="ss-stage" tabindex="0" role="slider" data-t-aria="stage" aria-label="${esc(en.ui.stage)}" aria-valuemin="0" aria-valuemax="${ORDER.length}" aria-valuenow="0" aria-valuetext="${esc(en.ui.assembled)}">${svg}</div>`;
+const controls = `<div class="ss-controls"><button type="button" class="ss-button" data-icon data-zoom="out" data-t-aria="zoomOut" aria-label="${esc(en.ui.zoomOut)}">−</button><span class="ss-zoom-level" data-zoom-level>100%</span><button type="button" class="ss-button" data-icon data-zoom="in" data-t-aria="zoomIn" aria-label="${esc(en.ui.zoomIn)}">+</button><button type="button" class="ss-button" data-zoom="reset" ${tx("reset")}</button><button type="button" class="ss-button" data-apart aria-pressed="false">${esc(en.ui.apart)}</button><span class="ss-hint" ${tx("hint")}</span></div>`;
+const extra = `<div class="ss-extra" data-p-extra><div class="ss-extra-figs"><figure class="ss-extra-fig" data-fig="sl">${FIG_SL}<figcaption ${tx("figSL")}</figcaption></figure><figure class="ss-extra-fig" data-fig="pair" hidden>${FIG_SL_PAIR}<figcaption ${tx("figSL")}</figcaption></figure><figure class="ss-extra-fig" data-fig="vac" hidden>${FIG_VAC}<figcaption ${tx("figVac")}</figcaption></figure></div></div>`;
+const paySwitch = `<div class="ss-pay" data-p-pay hidden><span class="ss-pay-label" ${tx("payLabel")}</span><div class="ss-seg" role="group"><button type="button" data-pay-set="starlink" aria-pressed="true" ${tx("payStarlink")}</button><button type="button" data-pay-set="crew" aria-pressed="false" ${tx("payCrew")}</button></div></div>`;
+const langSwitch = `<button type="button" class="ss-lang" data-lang lang="zh-Hans" aria-label="${esc(en.ui.langSwitchLabel)}">${esc(en.ui.langSwitch)}</button>`;
+const panel = `<aside class="iso-plate ss-panel" data-t-aria="panel" aria-label="${esc(en.ui.panel)}"><h2 class="ss-panel-head"><span class="ss-panel-num" data-p-num>V3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span>${langSwitch}</h2><div class="ss-lens-box" data-p-lens hidden><svg class="iso-svg ss-lens" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="#ss-scene"/></svg></div>${paySwitch}${extra}<p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><button type="button" class="ss-button ss-zoom-here" data-zoom-here hidden ${tx("zoomHere")}</button><div class="ss-keys">${KEYS}</div><div class="ss-parts">${PARTS}</div></aside>`;
+const body = `<figure class="iso-figure ss"><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("caption")}</span></figcaption></figure><span class="ss-live" aria-live="polite" data-live></span>`;
 
 const CSS = readFileSync(join(HERE, "starship.css"), "utf8");
 const LIVE = readFileSync(join(HERE, "live.js"), "utf8").replace("__DATA__", JSON.stringify(DATA));
-const page = k.pageHtml({ title: "Starship V3", theme: THEME, body: `<style>${CSS}</style>${body}`, script: LIVE, width: 1440 });
+const page = k.pageHtml({ title: en.pageTitle, theme: THEME, body: `<style>${CSS}</style>${body}`, script: LIVE, width: 1440 });
 const name = THEME === "light" ? "starship-light.html" : "starship.html";
 writeFileSync(join(HERE, "..", name), page);
 console.log("wrote", name, `${(page.length / 1024).toFixed(0)} KB`, `${W}×${H}`);

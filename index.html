@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Starship V3, taken apart</title>
 <script>
-  location.replace(matchMedia("(prefers-color-scheme: dark)").matches ? "starship.html" : "starship-light.html");
+  location.replace((matchMedia("(prefers-color-scheme: dark)").matches ? "starship.html" : "starship-light.html") + location.search);
 </script>
 <noscript><meta http-equiv="refresh" content="0; url=starship-light.html"></noscript>
 </head>
