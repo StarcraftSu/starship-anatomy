@@ -11,8 +11,6 @@ const pNum = panel.querySelector("[data-p-num]");
 const pTitle = panel.querySelector("[data-p-title]");
 const pText = panel.querySelector("[data-p-text]");
 const pSpecs = panel.querySelector("[data-p-specs]");
-const pExtra = panel.querySelector("[data-p-extra]");
-const pFigs = [...panel.querySelectorAll("[data-fig]")];
 const zoomHere = panel.querySelector("[data-zoom-here]");
 const toRaptor = panel.querySelector("[data-p-link]");
 const partButtons = [...panel.querySelectorAll(".ss-part")];
@@ -30,7 +28,7 @@ const doors = [...stage.querySelectorAll("[data-door]")];
 const payButtons = [...panel.querySelectorAll("[data-pay-set]")];
 const paySwitch = panel.querySelector("[data-p-pay]");
 let payload = "starlink";
-const langButton = panel.querySelector("[data-lang]");
+const langButton = document.querySelector(".ss-page-head [data-lang]");
 const LANGS = Object.keys(D.t);
 
 function pickLang() {
@@ -125,13 +123,9 @@ function fillPanel(id) {
       return [dt, dd];
     }),
   );
-  const figs = id ? D.sections[id].figs : [];
-  pFigs.forEach((fig) => (fig.hidden = !figs.includes(fig.dataset.fig)));
-  if (figs.length) pExtra.setAttribute("data-on", "");
-  else pExtra.removeAttribute("data-on");
   lensBox.hidden = !id;
   zoomHere.hidden = !id;
-  toRaptor.hidden = !figs.length;
+  toRaptor.hidden = !(id && D.sections[id].raptor);
   if (id) lensView.ready = false;
 }
 
@@ -622,15 +616,14 @@ function applyLang() {
   document.documentElement.lang = lang === "zh" ? "zh-Hans" : "en";
   document.title = words.pageTitle;
   root.dataset.lang = lang;
-  for (const el of root.querySelectorAll("[data-t]")) el.textContent = words.ui[el.dataset.t];
+  for (const el of document.querySelectorAll("[data-t]")) el.textContent = words.ui[el.dataset.t];
   for (const el of root.querySelectorAll("[data-t-aria]")) el.setAttribute("aria-label", words.ui[el.dataset.tAria]);
   svg.setAttribute("aria-label", words.ui.label);
-  partButtons.forEach((button) => (button.querySelector(".ss-part-name").textContent = words.sections[button.dataset.part].title));
+  partButtons.forEach((button) => (button.querySelector(".ss-part-name").textContent = words.sections[button.dataset.part].short));
   apartButton.textContent = apart ? words.ui.together : words.ui.apart;
   const other = LANGS.find((code) => code !== lang);
   langButton.textContent = words.ui.langSwitch;
   langButton.lang = other === "zh" ? "zh-Hans" : "en";
-  langButton.setAttribute("aria-label", words.ui.langSwitchLabel);
   holdHeight();
   say(readoutText());
   stage.setAttribute("aria-valuetext", "");

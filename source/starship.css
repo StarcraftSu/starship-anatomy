@@ -32,10 +32,99 @@
   --ss-antenna: #2b3445;
 }
 
-/* The description leads each figure, above the drawing, so it never moves while the panel changes. */
+/* Page header, figure headings and notes. Each layout holds its tallest panel's height, so nothing below it moves. */
+.ss-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 32px;
+  margin: 0 0 8px;
+}
+
+.ss-page-title h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--anatomy-strong);
+}
+
+.ss-lede {
+  margin: 0;
+  max-width: 46em;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--anatomy-text);
+}
+
+.ss-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ss-nav a {
+  padding: 5px 12px;
+  border-radius: 999px;
+  color: var(--anatomy-muted);
+  font-size: 13px;
+  text-decoration: none;
+  box-shadow: inset 0 0 0 1px var(--ss-ring);
+  transition: color 160ms var(--anatomy-ease), background 160ms var(--anatomy-ease);
+}
+
+.ss-nav a:hover,
+.ss-nav a:focus-visible {
+  color: var(--anatomy-strong);
+  background: var(--ss-hover);
+  outline: none;
+}
+
+.ss-nav .ss-lang {
+  margin-left: 6px;
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+.ss-fig-head {
+  margin: 0 0 14px;
+}
+
+.ss-fig-head h2 {
+  margin: 0 0 4px;
+  font-size: 19px;
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--anatomy-strong);
+}
+
+.ss-fig-head p {
+  margin: 0;
+  max-width: 56em;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--anatomy-text);
+}
+
 .ss > .iso-legend {
-  margin: 0 0 16px;
-  max-width: 78em;
+  margin-top: 14px;
+  max-width: 82em;
+  font-size: 12.5px;
+}
+
+.ss-foot {
+  margin: 48px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--ss-ring);
+  font-size: 12.5px;
+  color: var(--anatomy-muted);
+}
+
+.ss-foot a {
+  color: var(--anatomy-text);
 }
 
 .ss-layout {
@@ -43,6 +132,7 @@
   grid-template-columns: minmax(0, 1fr) 360px;
   gap: 20px;
   align-items: start;
+  align-content: start;
 }
 
 .ss .iso-plate {
@@ -237,7 +327,7 @@
   background: var(--anatomy-page);
   box-shadow: inset 0 0 0 1px var(--ss-ring);
   overflow: hidden;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 16 / 9;
 }
 
 .ss-lens {
@@ -247,58 +337,10 @@
   height: 100% !important;
 }
 
-.ss-extra {
-  display: none;
-  border-radius: 6px;
-  background: var(--anatomy-page);
-  box-shadow: inset 0 0 0 1px var(--ss-ring);
-  padding: 8px 8px 4px;
-}
-
-.ss-extra[data-on] {
-  display: block;
-}
-
-.ss-extra-figs {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 4px;
-}
-
-.ss-extra-fig {
-  display: grid;
-  gap: 2px;
-  justify-items: stretch;
-  margin: 0;
-  min-width: 0;
-}
-
-.ss-extra-fig figcaption {
-  text-align: center;
-}
-
-.ss-extra-fig[hidden] {
-  display: none;
-}
-
-.ss-extra-fig figcaption {
-  font-family: var(--anatomy-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--anatomy-muted);
-}
-
-.ss-extra svg {
-  max-height: 240px;
-  width: 100%;
-}
-
 .ss-text {
   margin: 0;
-  font-size: 13.5px;
-  line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--anatomy-text);
 }
 
@@ -348,6 +390,20 @@
   gap: 4px;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--ss-ring);
+}
+
+.ss-chips2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.ss-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.ss-chips-row .ss-part {
+  width: auto;
+  flex: 1 1 auto;
 }
 
 .ss-part {
@@ -1019,10 +1075,6 @@
   .ss-panel {
     position: static;
   }
-
-  .ss-extra svg {
-    max-height: 200px;
-  }
 }
 
 @media (max-width: 640px) {
@@ -1049,6 +1101,14 @@
 
   .ss-hint {
     display: none;
+  }
+
+  .ss-page-title h1 {
+    font-size: 24px;
+  }
+
+  .ss-lede {
+    font-size: 14px;
   }
 }
 

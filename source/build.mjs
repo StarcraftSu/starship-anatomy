@@ -874,44 +874,6 @@ const groups = PIECES.map((piece) => {
   return `<g class="it" data-piece="${piece.id}" data-m="${mx.toFixed(1)},${my.toFixed(1)},${mz.toFixed(1)}">${L.back.join("")}${L.hull.join("")}${L.inside.join("")}${L.engines.join("")}${L.jaws.join("")}${L.front.join("")}</g>`;
 });
 
-function fitWith(points, width, height, scale, azimuth, elevation, pad = 0) {
-  const unitQ = { origin: [0, 0], scale, azimuth, elevation };
-  const flat = points.map((point) => k.iso(point, unitQ));
-  const xs = flat.map(([x]) => x);
-  const ys = flat.map(([, y]) => y);
-  return { origin: [width / 2 - (Math.min(...xs) + Math.max(...xs)) / 2, pad + (height - pad) / 2 - (Math.min(...ys) + Math.max(...ys)) / 2], scale, azimuth, elevation };
-}
-
-const FIG = { width: 160, height: 230, azimuth: 40, elevation: 20, unit: 40 };
-function engineBounds(spec) {
-  const EU = FIG.unit;
-  const base = (spec.exit + 0.3) * EU;
-  const top = (0.22 + lengthOf(spec)) * EU;
-  return [[-base, -base, -0.12 * EU], [base, base, -0.12 * EU], [base, -base, -0.12 * EU], [-base, base, -0.12 * EU], [-base, -base, top], [base, base, top], [0, 0, top + 0.1 * EU]];
-}
-const scaleFor = (spec) => k.fitProjection(engineBounds(spec), FIG.width, FIG.height, { pad: 10, azimuth: FIG.azimuth, elevation: FIG.elevation }).scale;
-const PAIR_SCALE = Math.min(scaleFor(RAPTOR), scaleFor(RVAC));
-function engineFigure(spec, label, scale) {
-  const EU = FIG.unit;
-  const Q = fitWith(engineBounds(spec), FIG.width, FIG.height, scale, FIG.azimuth, FIG.elevation);
-  const exit = spec.exit * EU;
-  const z0 = 0.22 * EU;
-  const plate = { x: -(exit + 0.28 * EU), y: -(exit + 0.28 * EU), w: (exit + 0.28 * EU) * 2, d: (exit + 0.28 * EU) * 2, r: 0.12 * EU };
-  const ringF = G.frameOf([0, 0, 0], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
-  const across = [-Math.sin(FIG.azimuth * DEG), Math.cos(FIG.azimuth * DEG), 0];
-  const body = [
-    `<path class="iso-halo" d="${k.haloOf(plate, -0.12 * EU, 0.12 * EU, Q)}"/>`,
-    k.solidSvg(k.slabOf(plate, -0.12 * EU, 0.12 * EU, Q, 8, 1), { tone: "mid" }),
-    k.dotsSvg(k.corners(plate, 0.1 * EU).map(([x, y]) => k.iso([x, y, 0], Q)), { size: 0.6, tone: "mid" }),
-    k.solidSvg(G.ringBand(0, z0, exit - 0.06 * EU, exit + 0.08 * EU, ringF, Q), { tone: "mid" }),
-    engineParts([0, 0, z0], [0, 0, -1], spec, { P: Q, unit: EU, pumpDir: across, detail: true }),
-  ];
-  return k.figureSvg({ width: FIG.width, height: FIG.height, label, body, className: "ss-engine-fig" });
-}
-const SL_LABEL = "A Raptor 3 sea-level engine standing on its nozzle: gimbal block on top, two turbopumps either side of the powerhead, the main chamber and the bronze regeneratively cooled bell.";
-const FIG_SL = engineFigure(RAPTOR, SL_LABEL, scaleFor(RAPTOR));
-const FIG_SL_PAIR = engineFigure(RAPTOR, SL_LABEL, PAIR_SCALE);
-const FIG_VAC = engineFigure(RVAC, "A Raptor Vacuum engine: the same powerhead and chamber with a much larger nozzle, its lower part an uncooled extension.", PAIR_SCALE);
 
 function boxOf(piece, extra = 0, more = []) {
   const span = { bch4: 0.7 + FIN_SPAN, slox: 4.4, nose: 3.0 }[piece.id] ?? 0.8;
@@ -938,6 +900,14 @@ const TEXT = {
     pageTitle: "Starship V3, taken apart",
     langName: "English",
     ui: {
+      head: "Starship V3, taken apart",
+      lede: `An interactive drawing of SpaceX's Starship V3: how the ${M.stack} m stack is put together, what rides in its payload bay, and how each of its 39 Raptor engines turns propellant into thrust.`,
+      navStack: "1 · The stack",
+      navRaptor: "2 · One Raptor 3",
+      fig1Head: "The stack, section by section",
+      fig1Intro: "The full stack lies on a stacking jig, the ship belly up. Point at a section, or pick one beside the drawing, and the stack comes apart so you can look inside. Zoom with the scroll wheel or a pinch.",
+      footer: "Drawn with the drawing kit from the anatomy skill (MIT). Not affiliated with SpaceX.",
+      source: "Source on GitHub",
       fig: "Fig 1",
       figTitle: "Starship V3 · full stack",
       hint: "Scroll to zoom · drag to pan",
@@ -954,19 +924,16 @@ const TEXT = {
       keyCh4: "Liquid methane",
       keyTile: "Heat-shield tiles",
       keyBronze: "Raptor nozzles",
-      figSL: "Raptor 3 · sea level",
-      figVac: "Raptor Vacuum",
       payLabel: "Payload",
       payStarlink: "Starlink",
       payCrew: "Crew",
       langSwitch: "中文",
-      langSwitchLabel: "切换到中文",
       taking: "taking it apart",
       stacking: "stacking",
       apartIdle: "six sections · 39 engines out",
       assembled: "Assembled",
       apartSay: "Apart: six sections and their engines",
-      caption: `Starship V3 stands ${M.stack} m tall: a ${M.booster} m Super Heavy booster under a ${M.ship} m ship, both 9 m across and built from stainless-steel rings ${M.ring} m tall. Oxygen spaces are tinted blue and methane amber; in each stage the methane tank sits above the oxygen tank, so the methane reaches the engines through a tube down the middle of the oxygen tank (the cut-open windows). Take it apart and the six sections slide apart on their cradles, then the 33 + 6 engines slide out of their skirts. The ship lies belly up so its black heat-shield tiles and flaps show. Section 06 switches the payload bay between Starlink satellites and a crew cabin. Numbers follow SpaceX's May 2026 figures as listed on Wikipedia: Raptor 3 at ${M.raptorSea} tf (${M.raptorVac} tf vacuum), ${fmt(M.boosterProp)} t of propellant in the booster and about ${fmt(M.shipProp)} t in the ship, split here at Raptor's ${M.mixture}:1 oxygen-to-methane ratio. Engines are simplified, and proportions inside the tanks are approximate.`,
+      notes: `Starship V3 stands ${M.stack} m tall: a ${M.booster} m Super Heavy booster under a ${M.ship} m ship, both 9 m across and built from stainless-steel rings ${M.ring} m tall. Oxygen spaces are tinted blue and methane amber; in each stage the methane tank sits above the oxygen tank, so the methane reaches the engines through a tube down the middle of the oxygen tank (the cut-open windows). Numbers follow SpaceX's May 2026 figures as listed on Wikipedia: Raptor 3 at ${M.raptorSea} tf (${M.raptorVac} tf vacuum), ${fmt(M.boosterProp)} t of propellant in the booster and about ${fmt(M.shipProp)} t in the ship, split here at Raptor's ${M.mixture}:1 oxygen-to-methane ratio. Engines are simplified; proportions inside the tanks, the payload dispenser and the crew cabin are approximate.`,
       label: "SpaceX Starship V3 drawn as a full stack lying on a stacking jig: a long base plate with two rails, a metre ruler and cradles that carry six sections. From the engine end: the booster's aft skirt with 33 Raptor engines, its oxygen tank cut open to show the amber methane transfer tube, its methane tank with three grid fins and a vented interstage, then the ship's oxygen tank with six Raptors, four downcomers and two aft flaps, its methane tank, and the payload bay and nose, cut open to show the payload and the header tanks. Oxygen spaces are tinted blue and methane amber; the heat-shield tiles are black.",
     },
     idle: `${M.stack} m · 39 Raptor 3 · ${TOTAL} t propellant`,
@@ -986,31 +953,37 @@ const TEXT = {
     sections: {
       beng: {
         title: "33 Raptors and aft skirt",
+        short: "Engines",
         text: "Thirty-three Raptor 3 engines in three rings. The 3 in the centre and the 10 around them gimbal to steer, and relight for the boostback and landing burns; the outer 20 are fixed. Raptor 3 carries inside its housing the plumbing that Raptor 2 had on the outside, so V3 boosters no longer need a shroud around each engine. Take the stack apart and the engines slide out of the skirt, leaving the thrust puck and their mounts.",
         specs: [["Engines", "33 Raptor 3"], ["Thrust", `${M.raptorSea} tf each · ≈${LIFTOFF} tf in all`], ["Steering", "13 gimbal · 20 fixed"], ["Mass", "1,525 kg per engine"]],
       },
       blox: {
         title: "Booster oxygen tank",
+        short: "Booster oxygen",
         text: "The biggest tank on the vehicle, full of liquid oxygen. The methane stored above it reaches the engines through a large transfer tube down its centre, shown in amber in the cut-open window. On V3 the aft dome under it, facing the engines, carries metallic heat-shield tiles.",
         specs: [["Liquid oxygen", `≈${fmt(t(bLox))} t`], ["Walls", `steel rings ${M.ring} m tall, about 4 mm thick`], ["Through it", "the methane transfer tube"]],
       },
       bch4: {
         title: "Booster methane tank, grid fins, interstage",
+        short: "Booster methane",
         text: "Liquid methane, above the oxygen and separated from it by the common dome. Three grid fins near the top steer the booster back to the tower, whose arms catch it by them. On V3 the vented hot-staging interstage is built into this tank and stays with the booster instead of being dropped.",
         specs: [["Liquid methane", `≈${fmt(t(bCh4))} t`], ["Grid fins", "3 · about 1.5× earlier ones · 90/90/180°"], ["Interstage", "vented, built in, kept"]],
       },
       slox: {
         title: "Ship oxygen tank and six Raptors",
+        short: "Ship oxygen",
         text: "The ship's oxygen tank sits over its six engines. The three sea-level Raptors in the centre gimbal for steering and landing; the three Raptor Vacuum engines with their large fixed nozzles do most of the work in space. One central downcomer feeds methane to the sea-level engines and one more feeds each vacuum engine. The two aft flaps steer the ship as it falls belly first.",
         specs: [["Liquid oxygen", `≈${fmt(t(sLox))} t`], ["Sea level", `3 × ${M.raptorSea} tf, gimballed`], ["Vacuum", `3 × ${M.raptorVac} tf, fixed`], ["Downcomers", "4"]],
       },
       sch4: {
         title: "Ship methane tank",
+        short: "Ship methane",
         text: "The ship's methane, above its oxygen. The common dome at its bottom is where the four downcomers begin their run through the oxygen tank to the engines.",
         specs: [["Liquid methane", `≈${fmt(t(sCh4))} t`], ["Heat shield", "hexagonal tiles on the windward half"]],
       },
       nose: {
         title: "Payload bay and nose",
+        short: "Payload bay",
         pay: {
           starlink: {
             text: `Set up for Starlink. The satellites lie flat in a stack on the PEZ dispenser, a rack mounted on the methane tank's forward dome. One at a time, rails in the dispenser's base push the bottom satellite out through a slot-shaped door, and the stack is lowered to put the next one on the base. Ship 41 released ${FLIGHT14} Starlink V3 satellites this way on Flight 14 in September 2026. In the tip of the nose are the landing header tanks, oxygen in blue and methane in amber.`,
@@ -1028,6 +1001,14 @@ const TEXT = {
     pageTitle: "拆开的星舰 V3",
     langName: "中文",
     ui: {
+      head: "拆开的星舰 V3",
+      lede: `一张可以交互的 SpaceX 星舰 V3 图：${M.stack} 米的箭体是怎么拼起来的，载荷舱里装的是什么，39 台猛禽发动机又是怎样把推进剂变成推力的。`,
+      navStack: "1 · 整箭",
+      navRaptor: "2 · 一台猛禽 3",
+      fig1Head: "整箭，一段一段看",
+      fig1Intro: "整枚火箭平放在堆叠工装上，飞船腹部朝上。把鼠标移到某一段，或在图旁的列表里选一段，箭体就会拆开，让你看到里面。用滚轮或双指捏合缩放。",
+      footer: "绘图工具来自 anatomy skill（MIT 许可）。与 SpaceX 无关。",
+      source: "GitHub 源码",
       fig: "图 1",
       figTitle: "星舰 V3 · 全箭",
       hint: "滚轮缩放 · 拖动平移",
@@ -1044,19 +1025,16 @@ const TEXT = {
       keyCh4: "液态甲烷",
       keyTile: "隔热瓦",
       keyBronze: "猛禽喷管",
-      figSL: "猛禽 3 · 海平面版",
-      figVac: "真空版猛禽",
       payLabel: "载荷",
       payStarlink: "Starlink 卫星",
       payCrew: "载人",
       langSwitch: "English",
-      langSwitchLabel: "Switch to English",
       taking: "正在拆开",
       stacking: "正在装回",
       apartIdle: "六个分段 · 39 台发动机已滑出",
       assembled: "已装好",
       apartSay: "已拆开：六个分段和它们的发动机",
-      caption: `星舰 V3 高 ${M.stack} 米：${M.booster} 米的超重型助推器上面是 ${M.ship} 米的飞船，两者直径都是 9 米，都由每段高 ${M.ring} 米的不锈钢环焊成。液氧空间涂成蓝色，甲烷涂成琥珀色；每一级都是甲烷箱在上、液氧箱在下，所以甲烷要经过液氧箱正中的一根管道才能到达发动机（见剖开的窗口）。拆开后，六个分段在托架上滑开，接着 33 + 6 台发动机从尾裙里滑出。飞船腹部朝上摆放，好让黑色隔热瓦和襟翼露出来。第 06 段可以把载荷舱切换成 Starlink 卫星或载人舱。数字采用维基百科所列的 SpaceX 2026 年 5 月数据：猛禽 3 推力 ${M.raptorSea} 吨力（真空版 ${M.raptorVac} 吨力），助推器装 ${fmt(M.boosterProp)} 吨推进剂，飞船约 ${fmt(M.shipProp)} 吨，按猛禽 ${M.mixture}:1 的氧燃比拆分。发动机做了简化，贮箱内部比例是近似的。`,
+      notes: `星舰 V3 高 ${M.stack} 米：${M.booster} 米的超重型助推器上面是 ${M.ship} 米的飞船，两者直径都是 9 米，都由每段高 ${M.ring} 米的不锈钢环焊成。液氧空间涂成蓝色，甲烷涂成琥珀色；每一级都是甲烷箱在上、液氧箱在下，所以甲烷要经过液氧箱正中的一根管道才能到达发动机（见剖开的窗口）。数字采用维基百科所列的 SpaceX 2026 年 5 月数据：猛禽 3 推力 ${M.raptorSea} 吨力（真空版 ${M.raptorVac} 吨力），助推器装 ${fmt(M.boosterProp)} 吨推进剂，飞船约 ${fmt(M.shipProp)} 吨，按猛禽 ${M.mixture}:1 的氧燃比拆分。发动机做了简化；贮箱内部、卫星分配器和乘员舱的比例都是近似的。`,
       label: "SpaceX 星舰 V3 全箭平放在堆叠工装上：一块带两条导轨的长底板、一把米尺，以及托着六个分段的托架。从发动机一端起：助推器尾裙和 33 台猛禽发动机；剖开的助推器液氧箱，露出琥珀色的甲烷输送管；带三片栅格舵和排气级间段的甲烷箱；然后是飞船的液氧箱、六台猛禽、四根输送管和两片后襟翼；飞船甲烷箱；以及剖开的载荷舱和头锥，露出载荷和着陆贮箱。液氧空间为蓝色，甲烷为琥珀色，隔热瓦为黑色。",
     },
     idle: `${M.stack} 米 · 39 台猛禽 3 · ${TOTAL} 吨推进剂`,
@@ -1076,31 +1054,37 @@ const TEXT = {
     sections: {
       beng: {
         title: "33 台猛禽与尾裙",
+        short: "发动机",
         text: "33 台猛禽 3 发动机排成三圈。中间 3 台和外面一圈 10 台可以摆动来控制方向，并在返航和着陆时重新点火；最外圈 20 台是固定的。猛禽 3 把猛禽 2 外露的管路都收进了壳体内部，所以 V3 助推器不再需要给每台发动机加防护罩。拆开后，发动机会从尾裙里滑出来，留下推力盘和各自的安装座。",
         specs: [["发动机", "33 台猛禽 3"], ["推力", `每台 ${M.raptorSea} 吨力 · 合计约 ${LIFTOFF} 吨力`], ["转向", "13 台摆动 · 20 台固定"], ["质量", "每台 1,525 千克"]],
       },
       blox: {
         title: "助推器液氧箱",
+        short: "助推器液氧",
         text: "全箭最大的贮箱，装满液氧。储存在上方的甲烷通过贯穿其中心的一根大输送管流到发动机，剖开窗口里那根琥珀色的管子就是它。V3 在它下方朝向发动机的后穹顶上贴了金属隔热瓦。",
         specs: [["液氧", `约 ${fmt(t(bLox))} 吨`], ["箱壁", `不锈钢环，每段高 ${M.ring} 米，厚约 4 毫米`], ["从中穿过", "甲烷输送管"]],
       },
       bch4: {
         title: "助推器甲烷箱、栅格舵与级间段",
+        short: "助推器甲烷",
         text: "液态甲烷在液氧上方，两者之间隔着共底。靠近顶端的三片栅格舵引导助推器飞回发射塔，塔上的机械臂正是托住栅格舵把助推器接住的。V3 把带排气孔的热分离级间段做进了这个贮箱，它留在助推器上，不再抛掉。",
         specs: [["液态甲烷", `约 ${fmt(t(bCh4))} 吨`], ["栅格舵", "3 片 · 约为以前的 1.5 倍 · 间隔 90/90/180°"], ["级间段", "带排气孔，一体化，不抛弃"]],
       },
       slox: {
         title: "飞船液氧箱与六台猛禽",
+        short: "飞船液氧",
         text: "飞船的液氧箱位于六台发动机上方。中间三台海平面版猛禽可以摆动，负责转向和着陆；外圈三台真空版猛禽的大喷管是固定的，在太空中承担主要工作。中心的一根输送管把甲烷送给海平面发动机，每台真空发动机另有一根。两片后襟翼在飞船腹部朝下下落时控制姿态。",
         specs: [["液氧", `约 ${fmt(t(sLox))} 吨`], ["海平面版", `3 × ${M.raptorSea} 吨力，可摆动`], ["真空版", `3 × ${M.raptorVac} 吨力，固定`], ["输送管", "4 根"]],
       },
       sch4: {
         title: "飞船甲烷箱",
+        short: "飞船甲烷",
         text: "飞船的甲烷，在液氧上方。它底部的共底是四根输送管的起点，它们从这里穿过液氧箱通往发动机。",
         specs: [["液态甲烷", `约 ${fmt(t(sCh4))} 吨`], ["隔热瓦", "六边形，贴在迎风的半边"]],
       },
       nose: {
         title: "载荷舱与头锥",
+        short: "载荷舱",
         pay: {
           starlink: {
             text: `这是 Starlink 构型。卫星平躺着叠成一摞，放在 PEZ 分配器上，分配器装在甲烷箱的前穹顶上。底座上的导轨每次把最下面一颗卫星从缝隙状的舱门推出去，然后整摞下降一格，把下一颗放到底座上。2026 年 9 月的第 14 次飞行中，Ship 41 就这样释放了 ${FLIGHT14} 颗 Starlink V3 卫星。头锥尖端里是着陆用的小贮箱（header tank），蓝色装液氧，琥珀色装甲烷。`,
@@ -1123,7 +1107,7 @@ const unit = (vector) => {
   const p = at(vector);
   return [p[0] - o[0], p[1] - o[1]];
 };
-const FIGS = { beng: ["sl"], slox: ["pair", "vac"] };
+const TO_RAPTOR = ["beng", "slox"];
 const DATA = {
   W,
   H,
@@ -1137,7 +1121,7 @@ const DATA = {
   spring: { stagger: 0.06, stiffness: 42, damping: 12.5, substeps: 4 },
   moves: Object.fromEntries(PIECES.map((piece) => [piece.id, moveOf(piece)[0]])),
   boxes: Object.fromEntries(PIECES.map((piece) => [piece.id, { rest: boxOf(piece), pulled: piece.id === "nose" ? boxOf(piece, 0, [-1, 1].map((t) => payAt(SAT_TRAVEL + SAT.half + 0.3, t * SAT.side, SAT_BASE))) : boxOf(piece, PULL[piece.id] ? PULL[piece.id] + 0.4 : 0) }])),
-  sections: Object.fromEntries(ORDER.map((id, index) => [id, { num: String(index + 1).padStart(2, "0"), figs: FIGS[id] ?? [] }])),
+  sections: Object.fromEntries(ORDER.map((id, index) => [id, { num: String(index + 1).padStart(2, "0"), raptor: TO_RAPTOR.includes(id) }])),
   t: TEXT,
 };
 
@@ -1145,24 +1129,25 @@ const en = TEXT.en;
 const esc = (text) => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const tx = (key) => `data-t="${key}">${esc(en.ui[key])}`;
 const specsHtml = (list) => list.map(([key, value]) => `<dt>${esc(key)}</dt><dd>${esc(value)}</dd>`).join("");
-const PARTS = ORDER.map((id, index) => `<button type="button" class="ss-part" data-part="${id}"><span class="ss-num">${String(index + 1).padStart(2, "0")}</span><span class="ss-part-name">${esc(en.sections[id].title)}</span></button>`).join("");
+const PARTS = ORDER.map((id, index) => `<button type="button" class="ss-part" data-part="${id}"><span class="ss-num">${String(index + 1).padStart(2, "0")}</span><span class="ss-part-name">${esc(en.sections[id].short)}</span></button>`).join("");
 const KEYS = [["var(--ss-lox)", "keyLox"], ["var(--ss-ch4)", "keyCh4"], ["var(--ss-tile-key)", "keyTile"], ["var(--ss-bronze-key)", "keyBronze"]]
   .map(([colour, key]) => `<span class="ss-key"><i style="--key:${colour}"></i><span ${tx(key)}</span></span>`)
   .join("");
 const corners = `<div class="iso-plate-corners" aria-hidden="true"><span class="iso-plate-corner" data-corner="fig" ${tx("fig")}</span><span class="iso-plate-corner" data-corner="title" ${tx("figTitle")}</span><span class="iso-plate-corner" data-corner="readout" data-readout>${esc(en.idle)}</span></div>`;
 const stage = `<div class="ss-stage" tabindex="0" role="slider" data-t-aria="stage" aria-label="${esc(en.ui.stage)}" aria-valuemin="0" aria-valuemax="${ORDER.length}" aria-valuenow="0" aria-valuetext="${esc(en.ui.assembled)}">${svg}</div>`;
 const controls = `<div class="ss-controls"><button type="button" class="ss-button" data-icon data-zoom="out" data-t-aria="zoomOut" aria-label="${esc(en.ui.zoomOut)}">−</button><span class="ss-zoom-level" data-zoom-level>100%</span><button type="button" class="ss-button" data-icon data-zoom="in" data-t-aria="zoomIn" aria-label="${esc(en.ui.zoomIn)}">+</button><button type="button" class="ss-button" data-zoom="reset" ${tx("reset")}</button><button type="button" class="ss-button" data-apart aria-pressed="false">${esc(en.ui.apart)}</button><span class="ss-hint" ${tx("hint")}</span></div>`;
-const extra = `<div class="ss-extra" data-p-extra><div class="ss-extra-figs"><figure class="ss-extra-fig" data-fig="sl">${FIG_SL}<figcaption ${tx("figSL")}</figcaption></figure><figure class="ss-extra-fig" data-fig="pair" hidden>${FIG_SL_PAIR}<figcaption ${tx("figSL")}</figcaption></figure><figure class="ss-extra-fig" data-fig="vac" hidden>${FIG_VAC}<figcaption ${tx("figVac")}</figcaption></figure></div></div>`;
 const paySwitch = `<div class="ss-pay" data-p-pay hidden><span class="ss-pay-label" ${tx("payLabel")}</span><div class="ss-seg" role="group"><button type="button" data-pay-set="starlink" aria-pressed="true" ${tx("payStarlink")}</button><button type="button" data-pay-set="crew" aria-pressed="false" ${tx("payCrew")}</button></div></div>`;
-const langSwitch = `<button type="button" class="ss-lang" data-lang lang="zh-Hans" aria-label="${esc(en.ui.langSwitchLabel)}">${esc(en.ui.langSwitch)}</button>`;
-const panel = `<aside class="iso-plate ss-panel" data-t-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts">${PARTS}</div><h2 class="ss-panel-head"><span class="ss-panel-num" data-p-num>V3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span>${langSwitch}</h2><div class="ss-lens-box" data-p-lens hidden><svg class="iso-svg ss-lens" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="#ss-scene"/></svg></div>${paySwitch}${extra}<p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-panel-actions"><button type="button" class="ss-button ss-zoom-here" data-zoom-here hidden ${tx("zoomHere")}</button><a class="ss-button ss-link" href="#raptor" data-p-link hidden ${tx("toRaptor")}</a></div><div class="ss-keys">${KEYS}</div></aside>`;
-const body = `<figure class="iso-figure ss"><figcaption class="iso-legend"><span class="iso-caption" ${tx("caption")}</span></figcaption><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div></figure><span class="ss-live" aria-live="polite" data-live></span>`;
+const langSwitch = `<button type="button" class="ss-lang" data-lang lang="zh-Hans">${esc(en.ui.langSwitch)}</button>`;
+const header = `<header class="ss-page-head"><div class="ss-page-title"><h1 ${tx("head")}</h1><p class="ss-lede" ${tx("lede")}</p></div><nav class="ss-nav"><a href="#stack" ${tx("navStack")}</a><a href="#raptor" ${tx("navRaptor")}</a>${langSwitch}</nav></header>`;
+const footer = `<footer class="ss-foot"><span ${tx("footer")}</span> <a href="https://github.com/StarcraftSu/starship-anatomy" ${tx("source")}</a> · <a href="https://github.com/wheresryan22/anatomy">anatomy</a></footer>`;
+const panel = `<aside class="iso-plate ss-panel" data-t-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts ss-chips2">${PARTS}</div><h3 class="ss-panel-head"><span class="ss-panel-num" data-p-num>V3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span></h3><div class="ss-lens-box" data-p-lens hidden><svg class="iso-svg ss-lens" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="#ss-scene"/></svg></div>${paySwitch}<p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-panel-actions"><button type="button" class="ss-button ss-zoom-here" data-zoom-here hidden ${tx("zoomHere")}</button><a class="ss-button ss-link" href="#raptor" data-p-link hidden ${tx("toRaptor")}</a></div><div class="ss-keys">${KEYS}</div></aside>`;
+const body = `${header}<figure class="iso-figure ss" id="stack"><header class="ss-fig-head"><h2 ${tx("fig1Head")}</h2><p ${tx("fig1Intro")}</p></header><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("notes")}</span></figcaption></figure><span class="ss-live" aria-live="polite" data-live></span>`;
 
 const FIG2 = buildRaptor({ esc });
 const CSS = readFileSync(join(HERE, "starship.css"), "utf8");
 const LIVE = readFileSync(join(HERE, "live.js"), "utf8").replace("__DATA__", JSON.stringify(DATA));
 const RAPTOR_LIVE = readFileSync(join(HERE, "raptor-live.js"), "utf8").replace("__RAPTOR__", JSON.stringify(FIG2.data));
-const page = k.pageHtml({ title: en.pageTitle, theme: THEME, body: `<style>${CSS}</style>${body}${FIG2.html}`, script: `${LIVE}\n${RAPTOR_LIVE}`, width: 1440 });
+const page = k.pageHtml({ title: en.pageTitle, theme: THEME, body: `<style>${CSS}</style>${body}${FIG2.html}${footer}`, script: `${LIVE}\n${RAPTOR_LIVE}`, width: 1440 });
 const name = THEME === "light" ? "starship-light.html" : "starship.html";
 writeFileSync(join(HERE, "..", name), page);
 console.log("wrote", name, `${(page.length / 1024).toFixed(0)} KB`, `${W}×${H}`);

@@ -308,7 +308,7 @@ export function buildRaptor({ esc }) {
 
   const en = TEXT.en;
   const tx = (key) => `data-rt="${key}">${esc(en.ui[key])}`;
-  const stepButtons = STEPS.map((n) => `<button type="button" class="ss-part rp-step" data-step="${n}"><span class="ss-num">${n}</span><span class="rp-step-name">${esc(en.steps[n].title)}</span></button>`).join("");
+  const stepButtons = STEPS.map((n) => `<button type="button" class="ss-part rp-step" data-step="${n}"><span class="ss-num">${n}</span><span class="rp-step-name">${esc(en.steps[n].short)}</span></button>`).join("");
   const keys = [["var(--rp-lox)", "keyLox"], ["var(--rp-ch4)", "keyCh4"], ["var(--rp-oxgas)", "keyOxgas"], ["var(--rp-fuelgas)", "keyFuelgas"], ["var(--rp-hot)", "keyHot"]]
     .map(([colour, key]) => `<span class="ss-key"><i style="--key:${colour}"></i><span ${tx(key)}</span></span>`)
     .join("");
@@ -316,8 +316,8 @@ export function buildRaptor({ esc }) {
   const corners = `<div class="iso-plate-corners" aria-hidden="true"><span class="iso-plate-corner" data-corner="fig" ${tx("fig")}</span><span class="iso-plate-corner" data-corner="title" ${tx("figTitle")}</span><span class="iso-plate-corner" data-corner="readout" data-readout>${esc(en.idle)}</span></div>`;
   const stage = `<div class="ss-stage rp-stage" tabindex="0" role="slider" data-rt-aria="stage" aria-label="${esc(en.ui.stage)}" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" aria-valuetext="${esc(en.ui.assembled)}">${svg}</div>`;
   const controls = `<div class="ss-controls"><button type="button" class="ss-button" data-apart aria-pressed="false">${esc(en.ui.apart)}</button><button type="button" class="ss-button" data-play aria-pressed="false">${esc(en.ui.play)}</button><span class="ss-hint" ${tx("hint")}</span></div>`;
-  const panel = `<aside class="iso-plate ss-panel rp-panel" data-rt-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts">${stepButtons}</div><h2 class="ss-panel-head"><span class="ss-panel-num" data-p-num>R3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span><button type="button" class="ss-lang" data-lang>${esc(en.ui.langSwitch)}</button></h2><p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-keys">${keys}</div></aside>`;
-  const html = `<figure class="iso-figure ss rp" id="raptor"><figcaption class="iso-legend"><span class="iso-caption" ${tx("caption")}</span></figcaption><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div></figure>`;
+  const panel = `<aside class="iso-plate ss-panel rp-panel" data-rt-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts ss-chips-row">${stepButtons}</div><h3 class="ss-panel-head"><span class="ss-panel-num" data-p-num>R3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span></h3><p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-keys">${keys}</div></aside>`;
+  const html = `<figure class="iso-figure ss rp" id="raptor"><header class="ss-fig-head"><h2 ${tx("fig2Head")}</h2><p ${tx("fig2Intro")}</p></header><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("notes")}</span></figcaption></figure>`;
   return { html, data };
 }
 
@@ -326,6 +326,8 @@ const TEXT = {
     idle: `Raptor 3 · ${R3.thrust} tf · ${R3.pc} bar · ${R3.mass.toLocaleString("en-US")} kg`,
     ui: {
       fig: "Fig 2",
+      fig2Head: "One Raptor 3, step by step",
+      fig2Intro: "Raptor 3 hides its plumbing inside its housings. Point at the engine to take it apart, then step through how the propellant flows, or press Play.",
       figTitle: "Raptor 3 · how the propellant flows",
       hint: "Point at the engine to take it apart",
       apart: "Take apart",
@@ -344,8 +346,7 @@ const TEXT = {
       keyOxgas: "Oxygen-rich gas",
       keyFuelgas: "Methane-rich gas",
       keyHot: "Burning gas",
-      langSwitch: "中文",
-      caption: `Raptor 3 is ${R3.length} m long and ${R3.width} m across and weighs ${R3.mass.toLocaleString("en-US")} kg. Assembled it shows almost no pipes: SpaceX moved most of Raptor 2's plumbing and sensors into the engine's main structure. Taken apart on its stand, the oxygen turbopump and its preburner move to the left, the methane pair to the right, and the paths between them are drawn in colour: liquid oxygen blue, methane amber, oxygen-rich gas violet, methane-rich gas red. The routes are a diagram of the cycle, not the real internal passages, and the parts are simplified. Numbers: ${R3.thrust} tf at sea level and ${R3.vac} tf in vacuum (SpaceX, May 2026), ${R3.pc} bar in service and ${R3.pcTest} bar reached in testing, specific impulse ${R3.ispSL} s at sea level and ${R3.ispVac} s for the vacuum version, as listed on Wikipedia.`,
+      notes: `Raptor 3 is ${R3.length} m long and ${R3.width} m across and weighs ${R3.mass.toLocaleString("en-US")} kg. Assembled it shows almost no pipes: SpaceX moved most of Raptor 2's plumbing and sensors into the engine's main structure. Taken apart on its stand, the oxygen turbopump and its preburner move to the left, the methane pair to the right, and the paths between them are drawn in colour: liquid oxygen blue, methane amber, oxygen-rich gas violet, methane-rich gas red. The routes are a diagram of the cycle, not the real internal passages, and the parts are simplified. Numbers: ${R3.thrust} tf at sea level and ${R3.vac} tf in vacuum (SpaceX, May 2026), ${R3.pc} bar in service and ${R3.pcTest} bar reached in testing, specific impulse ${R3.ispSL} s at sea level and ${R3.ispVac} s for the vacuum version, as listed on Wikipedia.`,
       label: "A Raptor 3 rocket engine standing on its nozzle on an engine stand, with a blue oxygen standpipe on the left and an amber methane standpipe on the right. Taken apart, the oxygen turbopump and preburner sit to the left, the methane turbopump and preburner to the right, the injector, gimbal and the chamber with its bronze nozzle in the middle, and coloured paths show how the propellants flow between them.",
     },
     overview: {
@@ -356,30 +357,35 @@ const TEXT = {
     steps: {
       1: {
         title: "Two pumps",
+        short: "Pumps",
         say: "1 · propellants enter the two turbopumps",
         text: "Liquid oxygen and liquid methane come from the tanks at only a few bar and enter two turbopumps, one for each propellant. Each pump raises its propellant far above the pressure in the main chamber, because it still has to pass through a preburner and a turbine on the way.",
         specs: [["Oxygen pump", "spun by oxygen-rich gas"], ["Methane pump", "spun by methane-rich gas"]],
       },
       2: {
         title: "Methane cools the engine",
+        short: "Cooling",
         say: "2 · methane runs up the nozzle and chamber walls",
         text: "Before it burns, the methane cools the engine. From its pump it goes down to a manifold low on the nozzle and climbs through channels in the nozzle and chamber walls, carrying away the heat of the burning gas inside. It leaves, warmed, at the top of the chamber.",
         specs: [["Coolant", "all of the methane"], ["Path", "nozzle manifold → wall channels → chamber top"]],
       },
       3: {
         title: "Two preburners",
+        short: "Preburners",
         say: "3 · each preburner burns a little of the other propellant",
         text: "This is what makes the cycle full-flow. All the oxygen goes to the oxygen-rich preburner and burns there with a little methane; all the methane goes to the methane-rich preburner and burns with a little oxygen. Each makes a hot gas that is mostly one propellant, cool enough for a turbine to survive.",
         specs: [["Oxygen-rich", "all the oxygen + a little methane"], ["Methane-rich", "all the methane + a little oxygen"]],
       },
       4: {
         title: "Turbines, then the injector",
+        short: "Turbines",
         say: "4 · hot gas spins each pump, then flows to the injector",
         text: "Each hot gas spins the turbine on its own pump: oxygen-rich gas drives the oxygen pump and methane-rich gas the methane pump, so no seal inside a pump has to keep oxygen from methane. Still at high pressure, both gases then flow on to the main injector.",
         specs: [["Oxygen side", "oxygen-rich gas → oxygen turbine → injector"], ["Methane side", "methane-rich gas → methane turbine → injector"]],
       },
       5: {
         title: "Main chamber",
+        short: "Chamber",
         say: `5 · gas meets gas in the chamber at ${R3.pc} bar`,
         text: `In the injector the two hot gases meet, both already gaseous, and burn completely at about ${R3.pc} bar. The exhaust speeds up through the narrow throat and expands in the bell. Because nothing is dumped overboard to drive the pumps, all the propellant makes thrust.`,
         specs: [["Chamber", `${R3.pc} bar · ${R3.pcTest} bar in tests`], ["Thrust", `${R3.thrust} tf at sea level`]],
@@ -390,6 +396,8 @@ const TEXT = {
     idle: `猛禽 3 · ${R3.thrust} 吨力 · ${R3.pc} bar · ${R3.mass.toLocaleString("en-US")} 千克`,
     ui: {
       fig: "图 2",
+      fig2Head: "一台猛禽 3，一步一步看",
+      fig2Intro: "猛禽 3 把管路都藏进了壳体里。把鼠标移到发动机上就会拆开，然后逐步查看推进剂的流程，或者按「播放流程」。",
       figTitle: "猛禽 3 · 推进剂怎么流",
       hint: "把鼠标移到发动机上把它拆开",
       apart: "拆开",
@@ -408,8 +416,7 @@ const TEXT = {
       keyOxgas: "富氧燃气",
       keyFuelgas: "富燃燃气",
       keyHot: "燃烧中的燃气",
-      langSwitch: "English",
-      caption: `猛禽 3 长 ${R3.length} 米、直径 ${R3.width} 米，重 ${R3.mass.toLocaleString("en-US")} 千克。装好时几乎看不到管子：SpaceX 把猛禽 2 的大部分管路和传感器都做进了发动机主体。在支架上拆开后，氧涡轮泵和它的预燃室移到左边，甲烷那一对移到右边，它们之间的通路用颜色画出：液氧蓝色、甲烷琥珀色、富氧燃气紫色、富燃燃气红色。这些路线是循环原理的示意，并不是真实的内部通道，零件也做了简化。数字：海平面推力 ${R3.thrust} 吨力、真空 ${R3.vac} 吨力（SpaceX，2026 年 5 月），燃烧室压力服役中 ${R3.pc} bar、测试中达到 ${R3.pcTest} bar，比冲海平面 ${R3.ispSL} 秒、真空版 ${R3.ispVac} 秒，均取自维基百科。`,
+      notes: `猛禽 3 长 ${R3.length} 米、直径 ${R3.width} 米，重 ${R3.mass.toLocaleString("en-US")} 千克。装好时几乎看不到管子：SpaceX 把猛禽 2 的大部分管路和传感器都做进了发动机主体。在支架上拆开后，氧涡轮泵和它的预燃室移到左边，甲烷那一对移到右边，它们之间的通路用颜色画出：液氧蓝色、甲烷琥珀色、富氧燃气紫色、富燃燃气红色。这些路线是循环原理的示意，并不是真实的内部通道，零件也做了简化。数字：海平面推力 ${R3.thrust} 吨力、真空 ${R3.vac} 吨力（SpaceX，2026 年 5 月），燃烧室压力服役中 ${R3.pc} bar、测试中达到 ${R3.pcTest} bar，比冲海平面 ${R3.ispSL} 秒、真空版 ${R3.ispVac} 秒，均取自维基百科。`,
       label: "一台猛禽 3 火箭发动机，喷管朝下立在发动机支架上，左边是蓝色的液氧立管，右边是琥珀色的甲烷立管。拆开后，氧涡轮泵和预燃室在左，甲烷涡轮泵和预燃室在右，中间是喷注器、万向节和带青铜色喷管的燃烧室，彩色路线表示推进剂在它们之间如何流动。",
     },
     overview: {
@@ -420,30 +427,35 @@ const TEXT = {
     steps: {
       1: {
         title: "两台泵",
+        short: "两台泵",
         say: "1 · 推进剂进入两台涡轮泵",
         text: "液氧和液态甲烷从贮箱流来时只有几个大气压，分别进入两台涡轮泵，每种推进剂一台。每台泵都要把压力提到远高于主燃烧室，因为推进剂在路上还要先经过预燃室和涡轮。",
         specs: [["氧泵", "由富氧燃气驱动"], ["甲烷泵", "由富燃燃气驱动"]],
       },
       2: {
         title: "甲烷给发动机降温",
+        short: "冷却",
         say: "2 · 甲烷沿喷管和燃烧室壁向上流",
         text: "甲烷在燃烧之前，先给发动机降温。它从泵出来后流到喷管下部的集合环，再沿着喷管和燃烧室壁里的通道一路向上，带走里面燃气的热量，最后在燃烧室顶部流出时已经被加热。",
         specs: [["冷却剂", "全部甲烷"], ["路径", "喷管集合环 → 壁内通道 → 燃烧室顶部"]],
       },
       3: {
         title: "两个预燃室",
+        short: "预燃室",
         say: "3 · 每个预燃室烧掉一点另一种推进剂",
         text: "这就是“全流量”的由来。全部液氧进入富氧预燃室，和少量甲烷一起燃烧；全部甲烷进入富燃预燃室，和少量液氧一起燃烧。各自产生一股以一种推进剂为主的热燃气，温度低到涡轮能承受。",
         specs: [["富氧", "全部液氧 + 少量甲烷"], ["富燃", "全部甲烷 + 少量液氧"]],
       },
       4: {
         title: "先过涡轮，再到喷注器",
+        short: "涡轮",
         say: "4 · 热燃气带动各自的泵，再流向喷注器",
         text: "每股热燃气驱动自己那台泵上的涡轮：富氧燃气带动氧泵，富燃燃气带动甲烷泵，所以泵里不需要密封件把氧和甲烷隔开。两股燃气仍然保持着高压，接着流到主喷注器。",
         specs: [["氧这一侧", "富氧燃气 → 氧涡轮 → 喷注器"], ["甲烷这一侧", "富燃燃气 → 甲烷涡轮 → 喷注器"]],
       },
       5: {
         title: "主燃烧室",
+        short: "燃烧室",
         say: `5 · 气与气在燃烧室相遇，${R3.pc} bar`,
         text: `两股热燃气在喷注器里相遇，都已经是气体，在约 ${R3.pc} bar 下完全燃烧。燃气穿过狭窄的喉部加速，在钟形喷管里膨胀。因为没有任何推进剂为了驱动泵而被排掉，全部推进剂都用来产生推力。`,
         specs: [["燃烧室", `${R3.pc} bar · 测试中 ${R3.pcTest} bar`], ["推力", `海平面 ${R3.thrust} 吨力`]],

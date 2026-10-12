@@ -4,7 +4,7 @@
 
 An interactive isometric figure of the SpaceX Starship V3 full stack. Point at it and it comes apart into the six sections it is stacked from, then all 39 Raptor engines slide out of their skirts. Cutaway windows show how the tanks are arranged inside and what rides in the payload bay (Starlink satellites or a crew cabin), a side panel shows each section close up with its numbers, and the drawing zooms so you can look at any part.
 
-English and 中文: the page follows your browser's language; switch with the button in the panel, or add `?lang=zh` or `?lang=en` to the link.
+English and 中文: the page follows your browser's language; switch with the button at the top right of the page, or add `?lang=zh` or `?lang=en` to the link.
 
 ![Starship V3 assembled on its stacking jig, with the overview panel](preview-assembled.png)
 
@@ -33,7 +33,7 @@ To view it offline, download `starship-light.html` or `starship.html` and open i
 | Frame the picked section | **Zoom the drawing here** in the panel | same | — |
 | Reset | **Reset** | **Reset** | 0, or Escape for everything |
 | Change the payload | pick 06, then **Starlink** or **Crew** in the panel | same | — |
-| Change language | **中文** / **English** at the top of the panel | same | — |
+| Change language | **中文** / **English** at the top right of the page | same | — |
 
 Left alone, it runs a slow tour through the sections, and the panel follows. Under reduced motion it stays still.
 
@@ -66,7 +66,7 @@ Colour marks what things are: blue for liquid-oxygen spaces, amber for methane (
 | 05 | Ship methane tank | Cutaway, common dome with downcomer inlets |
 | 06 | Payload bay and nose | Cutaway of the bay and the header tanks. **Starlink**: 26 satellites stacked on the PEZ dispenser; the bottom one slides out through the slot door when you pick the section. **Crew**: three levels (quarters, a cabin with windows, two airlocks) with two people for scale. Forward flaps on both |
 
-For sections 01 and 04 the panel also shows a single Raptor 3 and Raptor Vacuum, drawn larger, side by side at the same scale. The engines are simplified: nozzle, chamber, powerhead, two turbopumps and gimbal block.
+For sections 01 and 04 the panel links down to Fig 2, which takes one Raptor 3 apart. The engines in Fig 1 are simplified: nozzle, chamber, powerhead, two turbopumps and gimbal block.
 
 The ship lies belly up so the heat-shield tiles and flaps face the viewer.
 

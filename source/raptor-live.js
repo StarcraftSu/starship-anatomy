@@ -12,7 +12,6 @@
   const stepButtons = [...panel.querySelectorAll(".rp-step")];
   const apartButton = root.querySelector("[data-apart]");
   const playButton = root.querySelector("[data-play]");
-  const langButton = panel.querySelector("[data-lang]");
   const flowsEl = stage.querySelector("[data-flows]");
   const flowEls = [...stage.querySelectorAll(".rp-flow")];
   const orgEls = [...stage.querySelectorAll("[data-org]")];
@@ -349,18 +348,15 @@
     for (const el of root.querySelectorAll("[data-rt]")) el.textContent = words.ui[el.dataset.rt];
     for (const el of root.querySelectorAll("[data-rt-aria]")) el.setAttribute("aria-label", words.ui[el.dataset.rtAria]);
     svg.setAttribute("aria-label", words.ui.label);
-    stepButtons.forEach((button) => (button.querySelector(".rp-step-name").textContent = words.steps[button.dataset.step].title));
+    stepButtons.forEach((button) => (button.querySelector(".rp-step-name").textContent = words.steps[button.dataset.step].short));
     apartButton.textContent = apart ? words.ui.together : words.ui.apart;
     playButton.textContent = playing ? words.ui.pause : words.ui.play;
-    langButton.textContent = words.ui.langSwitch;
-    langButton.lang = lang === "zh" ? "en" : "zh-Hans";
     holdHeight();
     say(readoutText());
     stage.setAttribute("aria-valuetext", "");
     describe();
   }
 
-  langButton.addEventListener("click", () => document.dispatchEvent(new CustomEvent("ss-lang-pick", { detail: lang === "zh" ? "en" : "zh" })));
   document.addEventListener("ss-lang", (event) => {
     lang = event.detail;
     applyLang();
