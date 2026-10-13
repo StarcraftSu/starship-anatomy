@@ -1275,7 +1275,8 @@
 }
 
 /* In sunlight above the Earth the steel reads lighter than the dark-theme default, so it parts from the tiles. */
-.iso:not([data-theme="light"]) .ob .ss-steel {
+.iso:not([data-theme="light"]) .ob .ss-steel,
+.iso:not([data-theme="light"]) .hm .ss-steel {
   --anatomy-paper: #3a4048;
   --anatomy-top: #464c55;
   --anatomy-shade-0: #2a2e34;
@@ -1320,6 +1321,74 @@
 .ob-sats > .ob-sat {
   position: absolute;
   overflow: visible;
+}
+
+/* Fig 5: coming home. Plasma, hot tiles, the ocean, the fireball; each ending shows only its own ground. */
+
+.hm {
+  --fl-sky: #e8eff6;
+  --hm-plasma-0: #fff3ea;
+  --hm-plasma-1: #ff9a66;
+  --hm-plasma-2: #ff4f9a;
+  --hm-hot: #ff7a2e;
+  --hm-sea: #c5d9ea;
+  --hm-sea-line: #8fb1cf;
+  --hm-smoke: #7d7f85;
+}
+
+.iso:not([data-theme="light"]) .hm {
+  --fl-sky: var(--anatomy-card);
+  --hm-sea: #0d2236;
+  --hm-sea-line: #24476a;
+  --hm-smoke: #5c5f66;
+}
+
+.hm[data-variant="splash"] [data-only="catch"],
+.hm[data-variant="catch"] [data-only="splash"] {
+  display: none;
+}
+
+.hm-sheath {
+  fill: url(#hm-sheath);
+}
+
+.hm-wake {
+  fill: url(#hm-wake);
+}
+
+.hm-hot {
+  mix-blend-mode: screen;
+}
+
+.hm-sea .iso-solid {
+  --anatomy-paper: var(--hm-sea);
+  --anatomy-top: var(--hm-sea);
+}
+
+.hm-sea .iso-line {
+  stroke: var(--hm-sea-line);
+}
+
+.hm-smoke {
+  fill: var(--hm-smoke);
+}
+
+.hm-blast {
+  fill: url(#hm-blast);
+}
+
+.hm-plume-out {
+  fill: url(#hm-grad-out);
+}
+
+.hm-plume-core {
+  fill: url(#hm-grad-core);
+}
+
+.hm [data-glow],
+.hm [data-hot],
+.hm [data-blast] {
+  will-change: transform, opacity;
 }
 
 @media (max-width: 1100px) {

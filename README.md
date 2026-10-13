@@ -26,6 +26,10 @@ A fourth follows the ship to orbit and watches it let its 26 Starlink satellites
 
 ![Fig 4 halfway through the deployment: the payload bay cut open on the ship's side, half the satellite stack gone, three satellites drifting up from the slot door](preview-orbit.png)
 
+And a fifth brings the ship home, with two endings: Flight 14's splashdown, or the tower catch planned for Flight 15:
+
+![Fig 5 at the hottest part of entry: the ship belly first, its tiles glowing orange, a pink wake of plasma streaming behind it](preview-home.png)
+
 ## View it
 
 **Live: https://starcraftsu.github.io/starship-anatomy/** — follows your system's light or dark setting. Or go straight to the [light](https://starcraftsu.github.io/starship-anatomy/starship-light.html) or [dark](https://starcraftsu.github.io/starship-anatomy/starship.html) page.
@@ -90,7 +94,22 @@ The ship flies on alone above the curve of the Earth, its payload bay cut open o
 | Last one out | T+1:04:50 | the 26th satellite leaves and the door closes |
 | Deorbit burn | T+2:12:00, 11 s | the ship turns round (the ground now slides the other way) and burns against its direction of travel |
 
-The readout counts the satellites out. Each event lights its section and links to it in Fig 1: 04 for the engines, 06 for the payload bay.
+The readout counts the satellites out. Each event lights its section and links to it in Fig 1: 04 for the engines, 06 for the payload bay. The deorbit burn links on to Fig 5.
+
+## Fig 5: coming home
+
+The camera follows the ship down until the ground comes into view. The panel switches between two endings: what Flight 14 did, and what Flight 15 is to try.
+
+| Event | Time (Flight 14) | What happens |
+|---|---|---|
+| Plasma | ≈ T+2:40 | belly first into the top of the atmosphere at more than 7 km/s; a glowing sheath and wake |
+| Entry | ≈ T+2:47 | the hottest part: the tiles glow, the flaps hold the ship at a steep angle |
+| Belly flop | ≈ T+3:06 | slower than sound, it falls flat through the clouds |
+| Flip | ≈ T+3:08:11 | three Raptors light, the ship swings upright, then brakes on 3 → 2 → 1 engines |
+| Splashdown | T+3:08:30 | upright in the Pacific; it tips over and its leftover propellant ignites about six seconds later |
+| Tower catch (Flight 15 plan) | no date yet | it lands beside the tower and the arms close under pins on its sides |
+
+The ship is drawn at 19 angles from flat to upright; it turns about a point 18 m up its axis during the flip and about its base when it tips over in the water.
 
 ## What Fig 1 shows
 
@@ -129,7 +148,9 @@ The ship lies belly up so the heat-shield tiles and flaps face the viewer.
 | Grid fins, interstage | 3 fins about 1.5× earlier ones; interstage built into the methane tank and kept | [Super Heavy, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Super_Heavy) |
 | PEZ dispenser | mounted on the forward dome; satellites pushed out one at a time from the base, the stack lowered for the next | [Starship spacecraft, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_(spacecraft)) |
 | Starlink V3 | 26 deployed on Flight 14 (September 2026); about 2 t each; up to 60 per flight planned | [TelecomTV](https://www.telecomtv.com/content/next-gen-telco-infra/spacex-deploys-v3-starlink-satellites-as-starship-reaches-orbit-56354/), [Tesla Oracle](https://www.teslaoracle.com/?p=66693) |
-| Flight 14 timeline | cutoff T+8:11, orbit burn T+25:28 for 19 s into 262 × 275 km at 30.5°, satellites out T+34:18 to T+1:04:50, deorbit burn T+2:12:00 for 11 s, entry T+2:28:52, splashdown T+3:08:30 | [Starship flight 14, Wikipedia](https://en.wikipedia.org/wiki/Starship_flight_14) |
+| Flight 14 timeline | cutoff T+8:11, orbit burn T+25:28 for 19 s into 262 × 275 km at 30.5°, satellites out T+34:18 to T+1:04:50, deorbit burn T+2:12:00 for 11 s, entry about T+2:47 ([NASASpaceFlight](https://www.nasaspaceflight.com/2026/09/starship-flight-14-orbit/); Wikipedia's table lists entry, flip and landing-burn start 18 minutes early), splashdown T+3:08:30 | [Starship flight 14, Wikipedia](https://en.wikipedia.org/wiki/Starship_flight_14) |
+| Flight 14 entry and landing | plasma ≈ T+2:40, entry ≈ T+2:47; landing burn 3 → 2 engines at T+3:08:20, 2 → 1 at T+3:08:26; splashdown T+3:08:30 north of Hawaii; exploded about six seconds later; not to be recovered | [NASASpaceFlight](https://www.nasaspaceflight.com/2026/09/starship-flight-14-orbit/), [Starship flight 14, Wikipedia](https://en.wikipedia.org/wiki/Starship_flight_14) |
+| Ship catch | first try planned for Flight 15 (Ship 42, Pad 2), about November 2026; Pad 2's arms lifted Ship 42 into catch position in September ground tests; first-try odds "at least 50 or 60 percent" (Elon Musk) | [KeepTrack](https://keeptrack.space/x-report/spacex-brief-2026-10-13), [Starship Flight 15 wiki](https://starship-spacex.fandom.com/wiki/Starship_Flight_15), [SatNews](https://satnews.com/2026/07/25/spacex-targets-first-starship-upper-stage-tower-catch-for-flight-14/) |
 | Crew layout | lunar lander (HLS): two airlocks, an elevator, crew area at the top; up to 100 crew planned for Starship | [Starship spacecraft, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_(spacecraft)) and SpaceX's HLS renders |
 
 Caveats:
@@ -139,6 +160,7 @@ Caveats:
 - The PEZ slot and the satellites are drawn from press descriptions (folded V3 satellites about 7 × 3.5 m); their exact sizes and the rack's layout are not published.
 - Fig 3's times follow Flight 5, the first catch; V3 flights may differ by seconds. Altitudes between the sourced points are interpolated, the timeline is compressed, and heights on screen above the tower are not to scale. The ship's time in orbit is approximate.
 - Fig 4 spaces the 26 satellites evenly between the first and the last (about 70 s apart), and its altitudes between the sourced points are approximate. SpaceX has not published how the dispenser moves the stack, which engines made the orbit and deorbit burns, or the ship's attitude while it deployed; the flame, how fast the satellites drift away and the Earth below are drawn for clarity, not to scale.
+- Fig 5: Wikipedia's Flight 14 table puts entry, the flip and the start of the landing burn 18 minutes earlier than the rest of its rows allow (a 20-minute fall after going subsonic, an 18-minute landing burn); the figure takes them 18 minutes later, which agrees with NASASpaceFlight's entry time and the splashdown. The belly-flop time and the altitudes are approximate. Where the ship's catch pins are is not published: they are drawn below the forward flaps, where the arms reach. The plasma, flame, clouds and ocean are drawn for clarity, not to scale.
 - No crewed Starship has flown. The crew cabin is illustrative, after SpaceX's lunar-lander renders; the real lander also has no flaps or heat shield and has landing legs.
 - Engine proportions: 3.1 m long; nozzle exits drawn 1.2 m across (Wikipedia gives the engine as 1.3 m across, but twenty nozzles have to fit in a ring around the 9 m booster), throats sized from Wikipedia's expansion ratios (34.34 at sea level, 80 for the vacuum version, which shares the throat, giving a 1.8 m vacuum nozzle). Raptor 3's internal layout is not published; Fig 2 arranges its parts after the usual full-flow layout and simplifies them to turned shapes.
 - Proportions inside the tanks (dome depths, tube diameters, engine spacing) are approximate. Chines are left off because it is unclear whether V3 boosters keep them.
@@ -158,6 +180,7 @@ node source/build.mjs           # writes starship.html
 - `source/boot.js` draws each figure in the page and starts it; `source/runtime.js` is what every figure's script shares (the page language, panel helpers, the frame loop that only runs on screen, the spring); `source/parts.mjs` is the markup every figure module shares; `source/timeline.js` is what Figs 3 and 4 share (keyframe tracks, the event panel and its links, Play, the scrubber, keys and autoplay).
 - `source/flight.mjs` and `source/flight-live.js` are Fig 3: the launch site, the booster drawn at 25 rotation angles, the arms at 13 positions, the timeline's keyframes and events, and its scene.
 - `source/orbit.mjs` and `source/orbit-live.js` are Fig 4: the ship with its cutaway and door, the 26 satellites (one small layer each), the Earth's limb and clouds, the flame, and the deployment schedule.
+- `source/home.mjs` and `source/home-live.js` are Fig 5: the ship at 19 pitch angles, the plasma and hot tiles, the ocean, the fireball and the two endings; `source/site.mjs` is the launch tower, arms and mount it shares with Fig 3.
 - `source/starship.css` holds the page styles and the colour tokens for every material, light and dark.
 - `source/kit/` is a copy of the drawing kit the build uses, with two hot spots sped up for drawing in the browser (the lathe's waist test and coordinate formatting; the output is byte for byte the same).
 

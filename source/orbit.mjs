@@ -38,7 +38,7 @@ const EVENTS = [
   { id: "insert", tm: 1528, ta: 12, sections: ["slox"] },
   { id: "door", tm: 2058, ta: 16.6, sections: ["nose"] },
   { id: "last", tm: 3890, ta: 36.6, sections: ["nose"] },
-  { id: "deorbit", tm: 7920, ta: 42.4, sections: ["slox"] },
+  { id: "deorbit", tm: 7920, ta: 42.4, sections: ["slox"], next: "home" },
 ];
 
 const TRACKS = {
@@ -352,7 +352,7 @@ export function buildOrbit() {
     t: TEXT,
   };
 
-  const html = timelineHtml({ id: "orbit", cls: "fl ob", W, H, end: END, start: TRACKS.clock[0][1], events: EVENTS, en: TEXT.en, head: "fig4Head", intro: "fig4Intro" });
+  const html = timelineHtml({ id: "orbit", cls: "fl ob", W, H, end: END, start: TRACKS.clock[0][1], events: EVENTS, en: TEXT.en, head: "fig4Head", intro: "fig4Intro", next: "home" });
   return { html, art: svg, data };
 }
 
@@ -370,6 +370,7 @@ const TEXT = {
       panel: "Events in orbit",
       stage: "Starship's upper stage above the Earth with its payload bay cut open. Space plays or pauses, the arrow keys step between events.",
       linked: "In Fig 1:",
+      toNext: "Coming home: Fig 5 ↓",
       notes: "Times follow Flight 14 on 28 September 2026, the first time Starship reached orbit, as listed on Wikipedia: engine cutoff at T+8:11, a 19-second orbit insertion burn from T+25:28 into a 262 × 275 km orbit, the 26 satellites released between T+34:18 and T+1:04:50, and an 11-second deorbit burn at T+2:12:00. Altitudes between those points are approximate, the satellites are spaced evenly between the first and the last, and the timeline speeds up and slows down so it plays in under a minute. The dispenser is drawn as in Fig 1; SpaceX has not published how it moves the stack. How fast the satellites drift away, the flame and the Earth below are drawn for clarity, not to scale.",
       label: "Starship's upper stage seen from the side above the curve of the Earth, its payload bay cut open to show 26 Starlink satellites stacked flat on a dispenser rack. A timeline plays: the six engines burning with a wide, faint flame, engine cutoff, a short orbit insertion burn, a slot-shaped door opening at the top of the bay, the satellites pushed out one at a time and drifting away while the stack moves down a place each time, the door closing, the ship turning round and a short deorbit burn.",
     },
@@ -384,7 +385,7 @@ const TEXT = {
       insert: { short: "Orbit burn", title: "Orbit insertion burn", text: "Seventeen minutes later, near the top of its path, the ship lights up again for 19 seconds. That lifts the low point of its path out of the atmosphere: now it stays up, circling the Earth about once every 90 minutes at about 7.7 km/s.", specs: [["Burn", "T+25:28, 19 s"], ["Orbit", "262 × 275 km, 30.5°"]] },
       door: { short: "Door opens", title: "The door opens", text: "A slot-shaped door in the side of the payload bay opens, and at T+34:18 the dispenser pushes the bottom satellite out through it along its rails. The satellite drifts up and away; the stack moves down one place to put the next one on the rails.", specs: [["First out", "T+34:18"], ["Each satellite", "≈ 2 t"]] },
       last: { short: "Last one out", title: "The 26th satellite", text: "A satellite leaves about every 70 seconds, and the last one is out at T+1:04:50, half an hour after the first: about 50 tonnes in all. Then the door closes. Each satellite unfolds its solar arrays and climbs to its working orbit on its own thrusters.", specs: [["Released", "26 in 30 min"], ["Last out", "T+1:04:50"], ["Mass", "≈ 50 t in all"]] },
-      deorbit: { short: "Deorbit burn", title: "Turning round to come home", text: "To come down, the ship has to slow down. It turns round so its engines face forward, and at T+2:12:00 it burns for 11 seconds against its direction of travel. That drops the low point of its path into the atmosphere: it enters belly first on its heat-shield tiles at T+2:28:52 and splashes down in the Pacific at T+3:08:30.", specs: [["Burn", "T+2:12:00, 11 s"], ["Entry", "T+2:28:52"], ["Splashdown", "T+3:08:30"]] },
+      deorbit: { short: "Deorbit burn", title: "Turning round to come home", text: "To come down, the ship has to slow down. It turns round so its engines face forward, and at T+2:12:00 it burns for 11 seconds against its direction of travel. That drops the low point of its path into the atmosphere: it enters belly first on its heat-shield tiles at about T+2:47 and splashes down in the Pacific at T+3:08:30. Fig 5 follows it down.", specs: [["Burn", "T+2:12:00, 11 s"], ["Entry", "≈ T+2:47"], ["Splashdown", "T+3:08:30"]] },
     },
     say: { km: "km", outBefore: "", outAfter: " out" },
   },
@@ -401,6 +402,7 @@ const TEXT = {
       panel: "轨道上的事件",
       stage: "地球上空的星舰飞船，载荷舱剖开。空格键播放或暂停，方向键在事件之间跳转。",
       linked: "在图 1 中：",
+      toNext: "返回地面：图 5 ↓",
       notes: "时间采用 2026 年 9 月 28 日第 14 次飞行的数据（星舰第一次入轨），取自维基百科：T+8:11 发动机关机，T+25:28 起入轨点火 19 秒、进入 262 × 275 公里的轨道，T+34:18 到 T+1:04:50 之间放出 26 颗卫星，T+2:12:00 离轨点火 11 秒。这些时间点之间的高度是近似值，卫星按第一颗到最后一颗之间平均间隔来画，时间轴也有快有慢，好让整段在一分钟内播完。分配器按图 1 的画法；SpaceX 没有公布它是怎么让整摞卫星下移的。卫星飘走的速度、尾焰和下面的地球是为了看清楚而画的，不按比例。",
       label: "从侧面看地球弧线上方的星舰飞船，载荷舱剖开，里面是平躺着叠在分配器架子上的 26 颗 Starlink 卫星。时间轴播放：六台发动机点火、尾焰又宽又淡，发动机关机，短暂的入轨点火，载荷舱顶部的缝隙舱门打开，卫星一颗一颗被推出去飘走、整摞每次下移一格，舱门关上，飞船调头，短暂的离轨点火。",
     },
@@ -415,7 +417,7 @@ const TEXT = {
       insert: { short: "入轨点火", title: "入轨点火", text: "十七分钟后，在轨迹最高点附近，飞船再点火 19 秒。这把轨迹的最低点抬出了大气层：从此它留在轨道上，以约 7.7 公里/秒的速度大约每 90 分钟绕地球一圈。", specs: [["点火", "T+25:28，19 秒"], ["轨道", "262 × 275 公里，倾角 30.5°"]] },
       door: { short: "舱门打开", title: "舱门打开", text: "载荷舱侧面的缝隙舱门打开，T+34:18 分配器沿导轨把最下面一颗卫星推出去。卫星向上慢慢飘走；整摞卫星下移一格，把下一颗放到导轨上。", specs: [["第一颗", "T+34:18"], ["每颗卫星", "约 2 吨"]] },
       last: { short: "最后一颗", title: "第 26 颗卫星", text: "大约每 70 秒放出一颗，最后一颗在 T+1:04:50 离开，距第一颗半个小时，总共约 50 吨。随后舱门关上。每颗卫星会展开自己的太阳能板，再用自带的推进器爬升到工作轨道。", specs: [["放出", "30 分钟内 26 颗"], ["最后一颗", "T+1:04:50"], ["总质量", "约 50 吨"]] },
-      deorbit: { short: "离轨点火", title: "调头回家", text: "要下来，飞船得先减速。它把自己调个头，让发动机朝前，T+2:12:00 逆着飞行方向点火 11 秒。这把轨迹的最低点压进了大气层：T+2:28:52 它用腹部的隔热瓦朝前再入大气，T+3:08:30 溅落在太平洋。", specs: [["点火", "T+2:12:00，11 秒"], ["再入", "T+2:28:52"], ["溅落", "T+3:08:30"]] },
+      deorbit: { short: "离轨点火", title: "调头回家", text: "要下来，飞船得先减速。它把自己调个头，让发动机朝前，T+2:12:00 逆着飞行方向点火 11 秒。这把轨迹的最低点压进了大气层：约 T+2:47 它用腹部的隔热瓦朝前再入大气，T+3:08:30 溅落在太平洋。图 5 跟着它一路下来。", specs: [["点火", "T+2:12:00，11 秒"], ["再入", "约 T+2:47"], ["溅落", "T+3:08:30"]] },
     },
     say: { km: "公里", outBefore: "已放出 ", outAfter: "" },
   },

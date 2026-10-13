@@ -6,6 +6,7 @@ import * as STACK from "./stack.mjs";
 import { buildRaptor } from "./raptor.mjs";
 import { buildFlight } from "./flight.mjs";
 import { buildOrbit } from "./orbit.mjs";
+import { buildHome } from "./home.mjs";
 
 // The page ships the code that draws each figure, not the drawing: it holds the words, panels and controls, each
 // stage holds an empty drawing of the right size, and the script draws the stages (boot.js). That keeps the page
@@ -31,21 +32,23 @@ function bundle(files) {
     })
     .join("\n");
 }
-const MODULES = `const SS_MODULES = {};\n${bundle(["kit/iso-kit.mjs", "kit/lathe.mjs", "parts.mjs", "stack.mjs", "raptor.mjs", "flight.mjs", "orbit.mjs"])}`;
+const MODULES = `const SS_MODULES = {};\n${bundle(["kit/iso-kit.mjs", "kit/lathe.mjs", "parts.mjs", "site.mjs", "stack.mjs", "raptor.mjs", "flight.mjs", "orbit.mjs", "home.mjs"])}`;
 const live = (file, token) => `(${token}) => {\n${source(file)}\n}`;
 const FIGURES = `const SS_FIGS = [
   { id: "stack", build: () => SS_MODULES.stack, live: ${live("live.js", "__DATA__")} },
   { id: "raptor", build: () => SS_MODULES.raptor.buildRaptor(), live: ${live("raptor-live.js", "__RAPTOR__")} },
   { id: "flight", build: () => SS_MODULES.flight.buildFlight(), live: ${live("flight-live.js", "__FLIGHT__")} },
   { id: "orbit", build: () => SS_MODULES.orbit.buildOrbit(), live: ${live("orbit-live.js", "__ORBIT__")} },
+  { id: "home", build: () => SS_MODULES.home.buildHome(), live: ${live("home-live.js", "__HOME__")} },
 ];`;
 const script = [MODULES, source("runtime.js"), source("timeline.js"), FIGURES, source("boot.js")].join("\n");
 
 const FIG2 = buildRaptor();
 const FIG3 = buildFlight();
 const FIG4 = buildOrbit();
+const FIG5 = buildHome();
 const CSS = source("starship.css");
-const page = k.pageHtml({ title: STACK.title, theme: THEME, body: `<style>${CSS}</style>${STACK.shell}${FIG2.html}${FIG3.html}${FIG4.html}${STACK.footer}`, script, width: 1440 });
+const page = k.pageHtml({ title: STACK.title, theme: THEME, body: `<style>${CSS}</style>${STACK.shell}${FIG2.html}${FIG3.html}${FIG4.html}${FIG5.html}${STACK.footer}`, script, width: 1440 });
 const name = THEME === "light" ? "starship-light.html" : "starship.html";
 writeFileSync(join(HERE, "..", name), page);
 console.log("wrote", name, `${(page.length / 1024).toFixed(0)} KB`, `(script ${(script.length / 1024).toFixed(0)} KB)`);

@@ -3,7 +3,8 @@
 // Everything that turns is prebuilt as frames (booster rotation, arm swing); the page only moves groups.
 import * as k from "./kit/iso-kit.mjs";
 import * as G from "./kit/lathe.mjs";
-import { esc, screenOf, timelineHtml } from "./parts.mjs";
+import { esc, screenOf, stripOf, timelineHtml } from "./parts.mjs";
+import { APRON, OLM_TOP, TOWER, launchSite } from "./site.mjs";
 
 const DEG = Math.PI / 180;
 const TAU = Math.PI * 2;
@@ -16,9 +17,7 @@ const ELEVATION = 22;
 const R = 4.5;
 const BOOSTER = 72.3;
 const SHIP = 52.1;
-const OLM_TOP = 20;
 const PIVOT = 36;
-const TOWER = { x0: -36, x1: -24, y0: -6, y1: 6, height: 146 };
 const ARM = { z: 100, hingeX: -24, y: 5.9, length: 31, half: 0.8, depth: 1.1, open: 85 };
 const FIN_S = 66.8;
 const ROT_FRAMES = 25;
@@ -56,7 +55,6 @@ const END = 48;
 
 export function buildFlight() {
   const fitPoints = [];
-  const APRON = { x: -60, y: -36, w: 104, d: 80, r: 3 };
   for (const [x, y] of [[APRON.x, APRON.y], [APRON.x + APRON.w, APRON.y], [APRON.x, APRON.y + APRON.d], [APRON.x + APRON.w, APRON.y + APRON.d]]) fitPoints.push([x * U, y * U, -1.5 * U]);
   fitPoints.push([-30 * U, 0, (TOWER.height + 12) * U], [0, 0, (OLM_TOP + BOOSTER + SHIP + 6) * U], [12 * U, 12 * U, 0]);
   const P = k.fitProjection(fitPoints, W, H, { pad: 22, azimuth: AZIMUTH, elevation: ELEVATION });
@@ -70,25 +68,7 @@ export function buildFlight() {
   const sorted = (list) => [...list].sort((a, b) => a.depth - b.depth).map((part) => part.svg).join("");
   const steel = { tone: "hi", className: "ss-steel" };
 
-  // A strip of a body of revolution between two angles, only the quads that face the camera.
-  function shell(F, rows, from, to, steps, style) {
-    const buckets = [[], [], [], [], []];
-    const fill = [];
-    for (let i = 0; i < rows.length - 1; i++) {
-      const [s0, r0] = rows[i];
-      const [s1, r1] = rows[i + 1];
-      for (let j = 0; j < steps; j++) {
-        const a0 = from + ((to - from) * j) / steps;
-        const a1 = from + ((to - from) * (j + 1)) / steps;
-        const n = G.unit3(G.sub3(G.mul3(G.radialOf(F, (a0 + a1) / 2), s1 - s0), G.mul3(F.a, r1 - r0)));
-        if (G.dot3(n, V) <= 1e-6) continue;
-        const d = k.pathOf([G.pointOf(F, s0, r0, a0), G.pointOf(F, s0, r0, a1), G.pointOf(F, s1, r1, a1), G.pointOf(F, s1, r1, a0)].map(at), true);
-        fill.push(d);
-        buckets[G.toneOf(n, P)].push(d);
-      }
-    }
-    return S({ fill: fill.join(""), outline: "", crease: "", top: buckets[4].join(""), shades: buckets.slice(0, 4).map((list) => list.join("")), seamless: true }, { crease: "none", ...style });
-  }
+  const shell = (F, rows, from, to, steps, style) => S(stripOf(F, rows, from, to, steps, P), { crease: "none", ...style });
 
   // ---- The booster, drawn once per rotation angle about a pivot 36 m up its axis. ----
   function boosterFrame(theta) {
@@ -183,90 +163,7 @@ export function buildFlight() {
   const flaps = [flap(TILE_C - 90, 0.6, 9.6, 3.6, 3.6, "slox"), flap(TILE_C + 90, 0.6, 9.6, 3.6, 3.6, "slox"), flap(TILE_C - 90, 40.6, 46.4, 2.6, 2.4, "nose"), flap(TILE_C + 90, 40.6, 46.4, 2.6, 2.4, "nose")];
   const shipSvg = flaps.filter((f) => !f.front).map((f) => f.svg).join("") + sorted(shipBands) + flaps.filter((f) => f.front).map((f) => f.svg).join("");
 
-  // ---- The launch site. ----
-  const site = { back: [], front: [] };
-  site.back.push(`<path class="iso-halo" d="${k.haloOf(APRON, -1.5 * U - 2, 18, P)}"/>`);
-  const apron = { x: APRON.x * U, y: APRON.y * U, w: APRON.w * U, d: APRON.d * U, r: APRON.r * U };
-  site.back.push(S(k.slabOf(apron, -1.5 * U, 1.5 * U, P, 8, 1), { tone: "mid", className: "fl-concrete", inner: Ln(k.sideSeam(apron, -0.75 * U, P, 8), { tone: "faint" }) }));
-  const joints = [];
-  for (let x = APRON.x + 8; x < APRON.x + APRON.w; x += 8) joints.push(k.lineOnTop([x * U, APRON.y * U], [x * U, (APRON.y + APRON.d) * U], 0, P));
-  for (let y = APRON.y + 8; y < APRON.y + APRON.d; y += 8) joints.push(k.lineOnTop([APRON.x * U, y * U], [(APRON.x + APRON.w) * U, y * U], 0, P));
-  site.back.push(Ln(joints.join(""), { tone: "faint" }));
-  const plate = { x: -11 * U, y: -11 * U, w: 22 * U, d: 22 * U, r: 1 };
-  site.back.push(S(k.slabOf(plate, 0, 0.5 * U, P, 4, 0.5), { tone: "hi", className: "ss-gunmetal" }));
-  const holes = [];
-  for (let x = -9; x <= 9; x += 2) for (let y = -9; y <= 9; y += 2) if (Math.hypot(x, y) > 3) holes.push(at([x * U, y * U, 0.5 * U]));
-  site.back.push(Dots(holes, { size: 0.5, tone: "lo" }));
-
-  // Tower: four corner columns, girders and braces on the two faces that face the camera.
-  const column = (x, y) => S(k.slabOf({ x: (x - 0.7) * U, y: (y - 0.7) * U, w: 1.4 * U, d: 1.4 * U, r: 0 }, 0, TOWER.height * U, P, 4, 0), { tone: "hi", className: "fl-tower" });
-  const corners = [[TOWER.x0, TOWER.y0], [TOWER.x1, TOWER.y0], [TOWER.x0, TOWER.y1], [TOWER.x1, TOWER.y1]].sort((p, q) => G.dot3([p[0], p[1], 0], V) - G.dot3([q[0], q[1], 0], V));
-  const towerBack = column(...corners[0]);
-  const braces = [];
-  const girders = [];
-  const levels = [];
-  for (let z = 0; z <= TOWER.height; z += 12) levels.push(Math.min(z, TOWER.height));
-  for (let i = 0; i < levels.length - 1; i++) {
-    const z0 = levels[i];
-    const z1 = levels[i + 1];
-    for (const face of [[[TOWER.x1, TOWER.y0], [TOWER.x1, TOWER.y1]], [[TOWER.x0, TOWER.y1], [TOWER.x1, TOWER.y1]]]) {
-      const [[ax, ay], [bx, by]] = face;
-      braces.push(k.pathOf([atM([ax, ay, z0]), atM([bx, by, z1])]), k.pathOf([atM([bx, by, z0]), atM([ax, ay, z1])]));
-    }
-  }
-  for (const z of levels) {
-    girders.push(k.pathOf([atM([TOWER.x1, TOWER.y0, z]), atM([TOWER.x1, TOWER.y1, z]), atM([TOWER.x0, TOWER.y1, z])]));
-  }
-  const towerTop = S(k.slabOf({ x: (TOWER.x0 - 0.6) * U, y: (TOWER.y0 - 0.6) * U, w: (TOWER.x1 - TOWER.x0 + 1.2) * U, d: (TOWER.y1 - TOWER.y0 + 1.2) * U, r: 0 }, TOWER.height * U, 1.6 * U, P, 4, 0.4), { tone: "hi", className: "fl-tower" });
-  const rodF = G.frameOf([(TOWER.x0 + TOWER.x1) * U * 0.5, 0, (TOWER.height + 1.6) * U], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
-  const rod = S(G.disc(0, 10 * U, 0.25 * U, rodF, P, { steps: 12 }), { tone: "hi", className: "fl-tower" });
-  const carriage = S(k.slabOf({ x: (TOWER.x0 - 1) * U, y: (TOWER.y0 - 1) * U, w: (TOWER.x1 - TOWER.x0 + 2) * U, d: (TOWER.y1 - TOWER.y0 + 2) * U, r: 0 }, (ARM.z - 3) * U, 6 * U, P, 4, 0.5), { tone: "hi", className: "ss-gunmetal" });
-  site.back.push(`<g class="fl-tower-group">${towerBack}${Ln(braces.join(""), { tone: "faint" })}${Ln(girders.join(""), { tone: "lo" })}${corners.slice(1).map(([x, y]) => column(x, y)).join("")}${towerTop}${rod}${carriage}</g>`);
-
-  // Chopstick arms: prebuilt from open (frame 0) to closed (last frame).
-  const armFrames = (side) => {
-    const frames = [];
-    for (let i = 0; i < ARM_FRAMES; i++) {
-      const open = 1 - i / (ARM_FRAMES - 1);
-      const phi = side * ARM.open * open * DEG;
-      const dir = [Math.cos(phi), Math.sin(phi), 0];
-      const across = [-Math.sin(phi), Math.cos(phi), 0];
-      const F = G.frameOf([ARM.hingeX * U, side * ARM.y * U, (ARM.z - ARM.depth) * U], [0, 0, 1], dir, across);
-      const beam = G.prismOf(F, [[0, -ARM.half * U], [ARM.length * U, -ARM.half * U], [ARM.length * U, ARM.half * U], [0, ARM.half * U]], 0, ARM.depth * 2 * U, P);
-      const pad = G.prismOf(F, [[(ARM.length - 7) * U, -ARM.half * 0.9 * U], [(ARM.length - 1) * U, -ARM.half * 0.9 * U], [(ARM.length - 1) * U, ARM.half * 0.9 * U], [(ARM.length - 7) * U, ARM.half * 0.9 * U]], ARM.depth * 2 * U, (ARM.depth * 2 + 0.5) * U, P);
-      frames.push(`<g data-arm="${i}"${i ? ` display="none"` : ""}>${S(beam, { tone: "hi", className: "ss-gunmetal" })}${S(pad, { tone: "hi", className: "fl-pad" })}</g>`);
-    }
-    return frames.join("");
-  };
-  const armBack = `<g class="fl-arm" data-side="back">${armFrames(-1)}</g>`;
-  const armFront = `<g class="fl-arm" data-side="front">${armFrames(1)}</g>`;
-
-  // Launch mount: six legs and a ring table, split into the half behind the rocket and the half in front.
-  const OF = G.frameOf([0, 0, 0], [0, 0, 1], [1, 0, 0], [0, 1, 0]);
-  const viewDeg = Math.atan2(V[1], V[0]) / DEG;
-  const ringSector = (a0, a1) => {
-    const poly = [];
-    for (let i = 0; i <= 24; i++) {
-      const a = (a0 + ((a1 - a0) * i) / 24) * DEG;
-      poly.push([11 * U * Math.cos(a), 11 * U * Math.sin(a)]);
-    }
-    for (let i = 24; i >= 0; i--) {
-      const a = (a0 + ((a1 - a0) * i) / 24) * DEG;
-      poly.push([6.5 * U * Math.cos(a), 6.5 * U * Math.sin(a)]);
-    }
-    const clamps = [];
-    for (let i = 0; i < 10; i++) clamps.push(at(G.pointOf(OF, OLM_TOP * U, 8.6 * U, (a0 + ((a1 - a0) * (i + 0.5)) / 10) * DEG)));
-    return S(G.prismOf(OF, poly, (OLM_TOP - 2) * U, OLM_TOP * U, P), { tone: "hi", className: "ss-gunmetal" }) + Dots(clamps, { size: 0.9, tone: "mid" });
-  };
-  const legs = [];
-  for (let i = 0; i < 6; i++) {
-    const a = (30 + i * 60) * DEG;
-    const x = 10 * Math.cos(a);
-    const y = 10 * Math.sin(a);
-    legs.push({ front: Math.cos(a - viewDeg * DEG) > 0, svg: S(k.cylinder(x * U, y * U, 1.3 * U, 0, (OLM_TOP - 2) * U, P, 20), { tone: "hi", className: "ss-gunmetal" }) });
-  }
-  const olmBack = legs.filter((leg) => !leg.front).map((leg) => leg.svg).join("") + ringSector(viewDeg + 90, viewDeg + 270);
-  const olmFront = legs.filter((leg) => leg.front).map((leg) => leg.svg).join("") + ringSector(viewDeg - 90, viewDeg + 90);
+  const { back: siteBack, olmBack, olmFront, armBack, armFront } = launchSite(P, { U, arm: ARM, frames: ARM_FRAMES });
 
   // Clouds the stack climbs through, and stars that show once the sky goes dark.
   let seed = 7;
@@ -307,7 +204,7 @@ export function buildFlight() {
     `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg ss-layer${moves || cam ? " ss-moves" : ""}${over ? " fl-over" : ""}"${cam ? " data-cam" : ""} viewBox="0 0 ${W} ${H}"${first ? ` role="img" aria-label="${esc(TEXT.en.ui.label)}"` : ` aria-hidden="true"`}>${body}</svg>`;
   const svg = [
     layer(`${defs}<rect class="fl-sky" x="0" y="0" width="${W}" height="${H}"/><rect class="fl-space" data-space x="0" y="0" width="${W}" height="${H}" opacity="0"/><g class="fl-stars" data-stars opacity="0">${stars.join("")}</g>`, { first: true }),
-    layer(`<g class="fl-site">${site.back.join("")}${olmBack}</g>`, { cam: true }),
+    layer(`<g class="fl-site">${siteBack}${olmBack}</g>`, { cam: true }),
     layer(armBack, { cam: true }),
     layer(`<g class="fl-clouds">${cloudsBack.join("")}</g>`, { cam: true, over: true }),
     layer(plume("booster")),

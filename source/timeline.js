@@ -1,6 +1,7 @@
-// The timeline figures (Fig 3 and Fig 4) share this: keyframe tracks, the event panel with its links into Fig 1,
-// Play, Restart, the scrubber and keys, and autoplay the first time a figure is seen (not on touch or with reduced
-// motion). Each figure passes in its own scene.
+// The timeline figures (Figs 3, 4 and 5) share this: keyframe tracks, the event panel with its links into Fig 1,
+// Play, Restart, the scrubber and keys, autoplay the first time a figure is seen (not on touch or with reduced
+// motion), and an optional switch between variants of the story, whose events can carry their own words and times
+// ({ variantName: ... }). Each figure passes in its own scene.
 const SS_TIMELINE = (() => {
   // Motion follows a monotone cubic through its keyframes (no overshoot); switches follow straight lines.
   function cubic(keys) {
@@ -59,11 +60,16 @@ const SS_TIMELINE = (() => {
     const restartButton = root.querySelector("[data-restart]");
     const scrub = root.querySelector("[data-scrub]");
     const secEls = [...stage.querySelectorAll("[data-sec]")];
+    const variantButtons = [...panel.querySelectorAll("[data-variant-set]")];
     const { still, touch } = SS;
 
     let lang = SS.lang;
     const T = () => D.t[lang];
     const clockAt = linear(D.tracks.clock);
+    let variant = D.variants?.[0];
+    const pick = (entry) => (variant && entry[variant] ? entry[variant] : entry);
+    const tmOf = (event) => (event.tm !== null && typeof event.tm === "object" ? event.tm[variant] : event.tm);
+    const timeOf = (event) => (tmOf(event) === null ? T().ui.planned : clockText(tmOf(event)));
 
     let pxPerUnit = (svg.getBoundingClientRect().width || D.W) / D.W;
     const shown = new Map();
@@ -91,6 +97,9 @@ const SS_TIMELINE = (() => {
       still,
       slide,
       words: T,
+      get variant() {
+        return variant;
+      },
       get playing() {
         return playing;
       },
@@ -107,7 +116,7 @@ const SS_TIMELINE = (() => {
 
     function render() {
       const tm = clockAt(ta);
-      SS.write(readout, `${clockText(tm)} · ${scene.render(ta, tm)}`);
+      SS.write(readout, `${scene.clock?.(ta, tm) ?? clockText(tm)} · ${scene.render(ta, tm)}`);
       if (document.activeElement !== scrub) scrub.value = String(ta);
       stage.setAttribute("aria-valuenow", ta.toFixed(1));
       const event = eventAt(ta);
@@ -125,12 +134,12 @@ const SS_TIMELINE = (() => {
     function fillPanel() {
       const words = T();
       const event = shownEvent;
-      const data = event ? words.events[event.id] : words.overview;
-      pNum.textContent = event ? clockText(event.tm) : "T";
+      const data = pick(event ? words.events[event.id] : words.overview);
+      pNum.textContent = event ? timeOf(event) : "T";
       pTitle.textContent = data.title;
       pText.textContent = data.text;
       SS.fillSpecs(pSpecs, data.specs);
-      const sections = event ? event.sections : [];
+      const sections = !event ? [] : Array.isArray(event.sections) ? event.sections : event.sections[variant];
       linksBox.hidden = !sections.length;
       linkList.replaceChildren(
         ...sections.map((id) => {
@@ -154,19 +163,39 @@ const SS_TIMELINE = (() => {
       if (sections.length) stage.setAttribute("data-focus", "");
       else stage.removeAttribute("data-focus");
       chips.forEach((chip) => chip.toggleAttribute("data-on", !!event && chip.dataset.event === event.id));
-      SS.announce(stage, event ? `${data.title}, ${clockText(event.tm)}` : words.overview.title, !playing);
+      SS.announce(stage, event ? `${data.title}, ${timeOf(event)}` : data.title, !playing);
     }
 
     function holdHeight() {
       measuring = true;
-      const keep = shownEvent;
-      SS.holdTallest(layout, [null, ...D.events], (event) => {
+      const keep = [shownEvent, variant];
+      const states = (D.variants || [variant]).flatMap((name) => [null, ...D.events].map((event) => [name, event]));
+      SS.holdTallest(layout, states, ([name, event]) => {
+        variant = name;
         shownEvent = event;
         fillPanel();
       });
-      shownEvent = keep;
+      [shownEvent, variant] = keep;
       measuring = false;
       fillPanel();
+    }
+
+    // Chips show each event's time and short name, which can differ between the variants.
+    function labelChips() {
+      chips.forEach((chip) => {
+        const event = D.events.find((item) => item.id === chip.dataset.event);
+        chip.querySelector(".ss-num").textContent = timeOf(event);
+        chip.querySelector(".fl-event-name").textContent = pick(T().events[event.id]).short;
+      });
+    }
+
+    function setVariant(name) {
+      variant = name;
+      root.dataset.variant = name;
+      variantButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.variantSet === name)));
+      labelChips();
+      fillPanel();
+      render();
     }
 
     function tick(dt) {
@@ -266,12 +295,13 @@ const SS_TIMELINE = (() => {
       if (touring) pause();
     });
     nextLink?.addEventListener("click", () => pause());
+    variantButtons.forEach((button) => button.addEventListener("click", () => setVariant(button.dataset.variantSet)));
 
     function applyLang() {
       const words = T();
       SS.swapWords(root, "ft", words.ui);
       svg.setAttribute("aria-label", words.ui.label);
-      chips.forEach((chip) => (chip.querySelector(".fl-event-name").textContent = words.events[chip.dataset.event].short));
+      labelChips();
       playButton.textContent = playing ? words.ui.pause : words.ui.play;
       holdHeight();
       render();
@@ -281,6 +311,7 @@ const SS_TIMELINE = (() => {
       applyLang();
     });
 
+    if (variant) root.dataset.variant = variant;
     if (lang !== "en") applyLang();
     else holdHeight();
     render();
