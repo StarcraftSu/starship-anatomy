@@ -18,7 +18,8 @@
   const still = matchMedia("(prefers-reduced-motion: reduce)");
   const live = document.querySelector("[data-live]");
 
-  const nodes = [...stage.querySelectorAll(".rp-it")].map((el) => ({ el, id: el.dataset.piece, m: el.dataset.m.split(",").map(Number), shown: "" }));
+  const nodes = [...stage.querySelectorAll(".rp-it")].map((el) => ({ el: el.ownerSVGElement, id: el.dataset.piece, m: el.dataset.m.split(",").map(Number), shown: "" }));
+  let pxPerUnit = (svg.getBoundingClientRect().width || D.W) / D.W;
   const IDS = nodes.map((node) => node.id);
   const MOVING = IDS.filter((id) => D.stagger.includes(id));
   const spring = Object.fromEntries(IDS.map((id) => [id, { x: 0, v: 0, target: 0, pending: null }]));
@@ -34,7 +35,8 @@
   let inside = false;
   let leaveTimer = 0;
   let idleTimer = 0;
-  let touring = !still.matches;
+  const touch = matchMedia("(hover: none)");
+  let touring = !still.matches && !touch.matches;
   let tourClock = -1.4;
   let visible = false;
   let frame = 0;
@@ -106,6 +108,9 @@
     layout.style.minHeight = `${Math.ceil(tallest)}px`;
   }
   window.addEventListener("resize", () => {
+    pxPerUnit = (svg.getBoundingClientRect().width || D.W) / D.W;
+    for (const node of nodes) node.shown = "-";
+    place();
     clearTimeout(holdTimer);
     holdTimer = setTimeout(holdHeight, 150);
   });
@@ -153,18 +158,15 @@
     for (const node of nodes) {
       const share = spring[node.id].x;
       const [mx, my, mz] = node.m;
-      const tx = (D.EX[0] * mx + D.EY[0] * my + D.EZ[0] * mz) * share;
-      const ty = (D.EX[1] * mx + D.EY[1] * my + D.EZ[1] * mz) * share;
-      const text = Math.abs(share) < 1e-4 ? "" : `translate(${tx.toFixed(2)} ${ty.toFixed(2)})`;
-      if (text !== node.shown) {
-        node.shown = text;
-        if (text) node.el.setAttribute("transform", text);
-        else node.el.removeAttribute("transform");
-      }
+      const tx = (D.EX[0] * mx + D.EY[0] * my + D.EZ[0] * mz) * share * pxPerUnit;
+      const ty = (D.EX[1] * mx + D.EY[1] * my + D.EZ[1] * mz) * share * pxPerUnit;
+      const text = Math.abs(share) < 1e-4 ? "" : `translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, 0)`;
+      if (text !== node.shown) node.el.style.transform = node.shown = text;
     }
     // The paths only make sense with the parts where they were drawn: fade them in over the last stretch.
     const least = Math.min(...MOVING.map((id) => spring[id].x));
     const shown = Math.round(Math.min(1, Math.max(0, (least - 0.82) / 0.16)) * 100) / 100;
+    root.toggleAttribute("data-flowing", visible && shown > 0);
     if (shown !== flowShown) {
       flowShown = shown;
       flowsEl.style.opacity = String(shown);
@@ -200,7 +202,7 @@
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
       if (inside || locked || playing || panel.matches(":hover")) return quiet();
-      touring = !still.matches;
+      touring = !still.matches && !touch.matches;
       tourClock = -0.6;
       run();
     }, 9000);
@@ -258,6 +260,7 @@
   new IntersectionObserver(
     (entries) => {
       visible = entries[entries.length - 1].isIntersecting;
+      root.toggleAttribute("data-flowing", visible && flowShown > 0);
       if (visible) run();
     },
     { rootMargin: "160px 0px" },

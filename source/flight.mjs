@@ -299,19 +299,25 @@ export function buildFlight({ esc }) {
   const steamSvg = steam.map((_, i) => `<circle class="fl-steam" data-steam="${i}" r="0" cx="0" cy="0"/>`).join("");
 
   const defs = `<defs><linearGradient id="fl-grad-out" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--fl-flame-0)"/><stop offset="0.3" stop-color="var(--fl-flame-1)" stop-opacity="0.95"/><stop offset="0.75" stop-color="var(--fl-flame-2)" stop-opacity="0.45"/><stop offset="1" stop-color="var(--fl-flame-2)" stop-opacity="0"/></linearGradient><linearGradient id="fl-grad-core" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="var(--fl-flame-0)" stop-opacity="0.9"/><stop offset="1" stop-color="var(--fl-flame-1)" stop-opacity="0"/></linearGradient></defs>`;
-  const world = [
-    `<g class="fl-site">${site.back.join("")}${armBack}${olmBack}</g>`,
-    `<g class="fl-clouds">${cloudsBack.join("")}</g>`,
-    plume("booster"),
-    `<g data-booster>${boosterFrames.join("")}<g class="fl-jets" data-vents opacity="0">${jets.join("")}</g></g>`,
-    plume("ship"),
-    `<g data-ship>${shipSvg}</g>`,
-    `<g class="fl-site">${olmFront}${armFront}</g>`,
-    `<g class="fl-steam-group">${steamSvg}</g>`,
-    `<g class="fl-clouds">${cloudsFront.join("")}</g>`,
+  // One <svg> layer per thing that moves on its own, in painter's order. The camera and the two stages slide whole
+  // layers on the GPU; only small layers (plumes, steam, the arm and booster frames) ever repaint while it plays.
+  // data-cam layers ride the camera; fl-over layers draw outside their box (clouds wait high above the view).
+  const layer = (body, { cam = false, moves = false, over = false, first = false } = {}) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg ss-layer${moves || cam ? " ss-moves" : ""}${over ? " fl-over" : ""}"${cam ? " data-cam" : ""} viewBox="0 0 ${W} ${H}"${first ? ` role="img" aria-label="${esc(TEXT.en.ui.label)}"` : ` aria-hidden="true"`}>${body}</svg>`;
+  const svg = [
+    layer(`${defs}<rect class="fl-sky" x="0" y="0" width="${W}" height="${H}"/><rect class="fl-space" data-space x="0" y="0" width="${W}" height="${H}" opacity="0"/><g class="fl-stars" data-stars opacity="0">${stars.join("")}</g>`, { first: true }),
+    layer(`<g class="fl-site">${site.back.join("")}${olmBack}</g>`, { cam: true }),
+    layer(armBack, { cam: true }),
+    layer(`<g class="fl-clouds">${cloudsBack.join("")}</g>`, { cam: true, over: true }),
+    layer(plume("booster")),
+    layer(`<g data-booster>${boosterFrames.join("")}<g class="fl-jets" data-vents opacity="0">${jets.join("")}</g></g>`, { moves: true }),
+    layer(plume("ship")),
+    layer(`<g data-ship>${shipSvg}</g>`, { moves: true }),
+    layer(`<g class="fl-site">${olmFront}</g>`, { cam: true }),
+    layer(armFront, { cam: true }),
+    layer(`<g class="fl-steam-group">${steamSvg}</g>`),
+    layer(`<g class="fl-clouds">${cloudsFront.join("")}</g>`, { cam: true, over: true }),
   ].join("");
-  const scene = `${defs}<rect class="fl-sky" x="0" y="0" width="${W}" height="${H}"/><rect class="fl-space" data-space x="0" y="0" width="${W}" height="${H}" opacity="0"/><g class="fl-stars" data-stars opacity="0">${stars.join("")}</g><g data-world>${world}</g>`;
-  const svg = k.figureSvg({ width: W, height: H, label: TEXT.en.ui.label, body: [scene], className: "fl-main" });
 
   const unit = (vector) => {
     const o = at([0, 0, 0]);

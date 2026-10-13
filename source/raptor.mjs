@@ -294,8 +294,15 @@ export function buildRaptor({ esc }) {
     const m = (MOVES[id] ?? [0, 0, 0]).map((v) => v * U);
     return `<g class="rp-it" data-piece="${id}" data-m="${m.map((v) => v.toFixed(1)).join(",")}">${pieces[id].join("")}</g>`;
   });
-  const scene = `<g class="rp-stand">${stand.join("")}${backPipe}</g>${groups.join("")}${frontPipe}<g class="rp-flows" data-flows>${flows.join("")}</g>`;
-  const svg = k.figureSvg({ width: W, height: H, label: TEXT.en.ui.label, body: [scene], className: "rp-main" });
+  // One <svg> layer per moving assembly, in painter's order, so taking it apart slides layers on the GPU; the
+  // flow paths get their own layer so their running dashes repaint only themselves.
+  const layer = (body, { moves = false, first = false, extra = "" } = {}) => `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg ss-layer${moves ? " ss-moves" : ""}"${extra} viewBox="0 0 ${W} ${H}"${first ? ` role="img" data-rt-label aria-label="${esc(TEXT.en.ui.label)}"` : ` aria-hidden="true"`}>${body}</svg>`;
+  const svg = [
+    layer(`<g class="rp-stand">${stand.join("")}${backPipe}</g>`, { first: true }),
+    ...groups.map((group, index) => layer(group, { moves: ORDER[index] !== "chamber" })),
+    layer(frontPipe),
+    layer(`<g class="rp-flows">${flows.join("")}</g>`, { extra: ` data-flows style="opacity:0;visibility:hidden"` }),
+  ].join("");
 
   const STEPS = [1, 2, 3, 4, 5];
   const ORGS = { 1: ["pump"], 2: ["jacket"], 3: ["pb"], 4: ["turbine", "injector"], 5: ["chamber", "injector"] };

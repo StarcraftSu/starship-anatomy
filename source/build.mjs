@@ -872,11 +872,17 @@ for (const [index, length] of [[0, 22], [1, 16], [2, 19]]) stand.push(Ln(k.lineO
 stand.push(Dots([at([PLATE.x + 2.6, PLATE.y + PLATE.d / 2, 0.8]), at([PLATE.x + PLATE.w - 2.6, PLATE.y + PLATE.d / 2, 0.8])], { size: 0.5, tone: "mid" }));
 
 const moveOf = (piece) => [-piece.out * U, 0, 0];
-const groups = PIECES.map((piece) => {
+// Each section is drawn into its own <svg> layers, stacked in painter's order, so the page can slide them on the
+// GPU instead of repainting the whole drawing every frame. A section with engines gets three: body, engines, front.
+const sceneLayers = [{ id: "ss-l0", body: stand.join("") }];
+for (const piece of PIECES) {
   const L = layers[piece.id];
-  const [mx, my, mz] = moveOf(piece);
-  return `<g class="it" data-piece="${piece.id}" data-m="${mx.toFixed(1)},${my.toFixed(1)},${mz.toFixed(1)}">${L.back.join("")}${L.hull.join("")}${L.inside.join("")}${L.engines.join("")}${L.jaws.join("")}${L.front.join("")}</g>`;
-});
+  const m = moveOf(piece).map((v) => v.toFixed(1)).join(",");
+  for (const parts of [[L.back, L.hull, L.inside], [L.engines], [L.jaws, L.front]]) {
+    const body = parts.flat().join("");
+    if (body) sceneLayers.push({ id: `ss-l${sceneLayers.length}`, body, piece: piece.id, m });
+  }
+}
 
 
 function boxOf(piece, extra = 0, more = []) {
@@ -1107,7 +1113,6 @@ const TEXT = {
 };
 
 const LABEL = TEXT.en.ui.label;
-const svg = k.figureSvg({ width: W, height: H, label: LABEL, body: [`<g id="ss-scene"><g class="ss-stand">${stand.join("")}</g><g class="ss-stack">${groups.join("")}</g></g>`], className: "ss-main" });
 const unit = (vector) => {
   const o = at([0, 0, 0]);
   const p = at(vector);
@@ -1140,13 +1145,16 @@ const KEYS = [["var(--ss-lox)", "keyLox"], ["var(--ss-ch4)", "keyCh4"], ["var(--
   .map(([colour, key]) => `<span class="ss-key"><i style="--key:${colour}"></i><span ${tx(key)}</span></span>`)
   .join("");
 const corners = `<div class="iso-plate-corners" aria-hidden="true"><span class="iso-plate-corner" data-corner="fig" ${tx("fig")}</span><span class="iso-plate-corner" data-corner="title" ${tx("figTitle")}</span><span class="iso-plate-corner" data-corner="readout" data-readout>${esc(en.idle)}</span></div>`;
+const layerSvg = (layer, index) => `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg ss-layer${layer.piece ? " ss-moves" : ""}" viewBox="0 0 ${W} ${H}"${index ? ` aria-hidden="true"` : ` role="img" aria-label="${esc(LABEL)}"`}><g id="${layer.id}"${layer.piece ? ` class="it" data-piece="${layer.piece}" data-m="${layer.m}" data-layer` : ` class="ss-stand"`}>${layer.body}</g></svg>`;
+const svg = sceneLayers.map(layerSvg).join("");
+const lensUses = sceneLayers.map((layer) => `<use href="#${layer.id}"${layer.piece ? ` data-ride="${layer.piece}"` : ""}/>`).join("");
 const stage = `<div class="ss-stage" tabindex="0" role="slider" data-t-aria="stage" aria-label="${esc(en.ui.stage)}" aria-valuemin="0" aria-valuemax="${ORDER.length}" aria-valuenow="0" aria-valuetext="${esc(en.ui.assembled)}">${svg}</div>`;
 const controls = `<div class="ss-controls"><button type="button" class="ss-button" data-icon data-zoom="out" data-t-aria="zoomOut" aria-label="${esc(en.ui.zoomOut)}">−</button><span class="ss-zoom-level" data-zoom-level>100%</span><button type="button" class="ss-button" data-icon data-zoom="in" data-t-aria="zoomIn" aria-label="${esc(en.ui.zoomIn)}">+</button><button type="button" class="ss-button" data-zoom="reset" ${tx("reset")}</button><button type="button" class="ss-button" data-apart aria-pressed="false">${esc(en.ui.apart)}</button><span class="ss-hint" ${tx("hint")}</span></div>`;
 const paySwitch = `<div class="ss-pay" data-p-pay hidden><span class="ss-pay-label" ${tx("payLabel")}</span><div class="ss-seg" role="group"><button type="button" data-pay-set="starlink" aria-pressed="true" ${tx("payStarlink")}</button><button type="button" data-pay-set="crew" aria-pressed="false" ${tx("payCrew")}</button></div></div>`;
 const langSwitch = `<button type="button" class="ss-lang" data-lang lang="zh-Hans">${esc(en.ui.langSwitch)}</button>`;
 const header = `<header class="ss-page-head"><div class="ss-page-title"><h1 ${tx("head")}</h1><p class="ss-lede" ${tx("lede")}</p></div><nav class="ss-nav"><a href="#stack" ${tx("navStack")}</a><a href="#raptor" ${tx("navRaptor")}</a><a href="#flight" ${tx("navFlight")}</a>${langSwitch}</nav></header>`;
 const footer = `<footer class="ss-foot"><span ${tx("footer")}</span> <a href="https://github.com/StarcraftSu/starship-anatomy" ${tx("source")}</a> · <a href="https://github.com/wheresryan22/anatomy">anatomy</a></footer>`;
-const panel = `<aside class="iso-plate ss-panel" data-t-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts ss-chips2">${PARTS}</div><h3 class="ss-panel-head"><span class="ss-panel-num" data-p-num>V3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span></h3><div class="ss-lens-box" data-p-lens hidden><svg class="iso-svg ss-lens" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="#ss-scene"/></svg></div>${paySwitch}<p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-panel-actions"><button type="button" class="ss-button ss-zoom-here" data-zoom-here hidden ${tx("zoomHere")}</button><a class="ss-button ss-link" href="#raptor" data-p-link hidden ${tx("toRaptor")}</a></div><div class="ss-keys">${KEYS}</div></aside>`;
+const panel = `<aside class="iso-plate ss-panel" data-t-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts ss-chips2">${PARTS}</div><h3 class="ss-panel-head"><span class="ss-panel-num" data-p-num>V3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span></h3><div class="ss-lens-box" data-p-lens hidden><svg class="iso-svg ss-lens" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${lensUses}</svg></div>${paySwitch}<p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-panel-actions"><button type="button" class="ss-button ss-zoom-here" data-zoom-here hidden ${tx("zoomHere")}</button><a class="ss-button ss-link" href="#raptor" data-p-link hidden ${tx("toRaptor")}</a></div><div class="ss-keys">${KEYS}</div></aside>`;
 const body = `${header}<figure class="iso-figure ss" id="stack"><header class="ss-fig-head"><h2 ${tx("fig1Head")}</h2><p ${tx("fig1Intro")}</p></header><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("notes")}</span></figcaption></figure><span class="ss-live" aria-live="polite" data-live></span>`;
 
 const FIG2 = buildRaptor({ esc });

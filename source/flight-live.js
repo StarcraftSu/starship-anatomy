@@ -15,20 +15,21 @@
   const playButton = root.querySelector("[data-play]");
   const restartButton = root.querySelector("[data-restart]");
   const scrub = root.querySelector("[data-scrub]");
-  const world = svg.querySelector("[data-world]");
-  const space = svg.querySelector("[data-space]");
-  const starsEl = svg.querySelector("[data-stars]");
-  const boosterEl = svg.querySelector("[data-booster]");
+  const camLayers = [...stage.querySelectorAll("[data-cam]")];
+  const space = stage.querySelector("[data-space]");
+  const starsEl = stage.querySelector("[data-stars]");
+  const boosterEl = stage.querySelector("[data-booster]");
   const rotEls = [...boosterEl.querySelectorAll("[data-rot]")];
   const ventsEl = boosterEl.querySelector("[data-vents]");
-  const shipEl = svg.querySelector("[data-ship]");
-  const plumeB = svg.querySelector('[data-plume="booster"]');
-  const plumeS = svg.querySelector('[data-plume="ship"]');
-  const armBack = [...svg.querySelectorAll('.fl-arm[data-side="back"] [data-arm]')];
-  const armFront = [...svg.querySelectorAll('.fl-arm[data-side="front"] [data-arm]')];
-  const steamEls = [...svg.querySelectorAll("[data-steam]")];
-  const secEls = [...svg.querySelectorAll("[data-sec]")];
+  const shipEl = stage.querySelector("[data-ship]");
+  const plumeB = stage.querySelector('[data-plume="booster"]');
+  const plumeS = stage.querySelector('[data-plume="ship"]');
+  const armBack = [...stage.querySelectorAll('.fl-arm[data-side="back"] [data-arm]')];
+  const armFront = [...stage.querySelectorAll('.fl-arm[data-side="front"] [data-arm]')];
+  const steamEls = [...stage.querySelectorAll("[data-steam]")];
+  const secEls = [...stage.querySelectorAll("[data-sec]")];
   const still = matchMedia("(prefers-reduced-motion: reduce)");
+  const touch = matchMedia("(hover: none)");
   const live = document.querySelector("[data-live]");
 
   let lang = document.documentElement.lang.startsWith("zh") ? "zh" : "en";
@@ -83,7 +84,20 @@
   };
 
   const PX = -D.EZ[1];
-  const screen = ([x, y, z]) => [D.O[0] + D.EX[0] * x + D.EY[0] * y + D.EZ[0] * z, D.O[1] + D.EX[1] * x + D.EY[1] * y + D.EZ[1] * z];
+  const boosterLayer = boosterEl.ownerSVGElement;
+  const shipLayer = shipEl.ownerSVGElement;
+  let pxPerUnit = (svg.getBoundingClientRect().width || D.W) / D.W;
+  const shown = new Map();
+  // Slide a whole layer by a shift in drawing units; the browser composites it without repainting.
+  const slide = (el, x, y) => {
+    const text = `translate3d(${(x * pxPerUnit).toFixed(2)}px, ${(y * pxPerUnit).toFixed(2)}px, 0)`;
+    if (shown.get(el) !== text) {
+      shown.set(el, text);
+      el.style.transform = text;
+    }
+  };
+  let camY = 0;
+  const screen = ([x, y, z]) => [D.O[0] + D.EX[0] * x + D.EY[0] * y + D.EZ[0] * z, D.O[1] + D.EX[1] * x + D.EY[1] * y + D.EZ[1] * z + camY];
 
   let ta = 0;
   let playing = false;
@@ -140,11 +154,12 @@
     const high = smooth(0, 60, altitude);
 
     const cam = Math.max(0, base - 35);
-    world.setAttribute("transform", `translate(0 ${(cam * PX).toFixed(2)})`);
-    boosterEl.setAttribute("transform", `translate(${(D.EZ[0] * base).toFixed(2)} ${(D.EZ[1] * base).toFixed(2)})`);
+    camY = cam * PX;
+    for (const el of camLayers) slide(el, 0, camY);
+    slide(boosterLayer, D.EZ[0] * base, D.EZ[1] * base + camY);
     show(rotEls, Math.round((theta / Math.PI) * (D.rotFrames - 1)), rotState);
     const shipBase = base + D.booster + sep;
-    shipEl.setAttribute("transform", `translate(0 ${(D.EZ[1] * shipBase).toFixed(2)})`);
+    slide(shipLayer, 0, D.EZ[1] * shipBase + camY);
 
     // Booster flame from the centre of its engine plane, along its axis.
     const throttle = boosterAt(ta);
@@ -290,7 +305,7 @@
       visible = entries[entries.length - 1].isIntersecting;
       if (visible && !seen) {
         seen = true;
-        if (!still.matches) {
+        if (!still.matches && !touch.matches) {
           touring = true;
           setPlaying(true);
         }
@@ -337,6 +352,11 @@
       event.preventDefault();
       jump(D.end);
     }
+  });
+  window.addEventListener("resize", () => {
+    pxPerUnit = (svg.getBoundingClientRect().width || D.W) / D.W;
+    shown.clear();
+    render();
   });
   stage.addEventListener("pointerdown", () => {
     if (touring) pause();

@@ -149,6 +149,38 @@
   cursor: default;
 }
 
+/* The drawing is a stack of <svg> layers in painter's order; only the first takes up space. */
+.ss-layer {
+  pointer-events: none;
+}
+
+.ss-layer > g {
+  pointer-events: visiblePainted;
+}
+
+.ss-layer + .ss-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ss-moves {
+  will-change: transform;
+}
+
+.ss-stage {
+  overflow: hidden;
+}
+
+.ss-stage > svg.fl-over {
+  overflow: visible !important;
+}
+
+.rp-stage [data-flows] {
+  will-change: opacity;
+}
+
 .ss-stage[data-zoomed] {
   touch-action: none;
   cursor: grab;
@@ -995,6 +1027,11 @@
 
 .rp-flow:not([data-on]) {
   opacity: 0.18;
+}
+
+/* The dashes only run while the paths are on screen; a running CSS animation repaints the drawing every frame. */
+.rp:not([data-flowing]) .rp-stream {
+  animation: none;
 }
 
 .rp-flow:not([data-on]) .rp-stream {
