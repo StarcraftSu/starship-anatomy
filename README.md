@@ -30,7 +30,7 @@ A fourth follows the ship to orbit and watches it let its 26 Starlink satellites
 
 **Live: https://starcraftsu.github.io/starship-anatomy/** — follows your system's light or dark setting. Or go straight to the [light](https://starcraftsu.github.io/starship-anatomy/starship-light.html) or [dark](https://starcraftsu.github.io/starship-anatomy/starship.html) page.
 
-To view it offline, download `starship-light.html` or `starship.html` and open it in a browser. Each page is a single self-contained file that makes no network requests.
+To view it offline, download `starship-light.html` or `starship.html` and open it in a browser. Each page is a single self-contained file that makes no network requests. It carries the code that draws the figures rather than the drawings themselves (350 KB, about 110 KB compressed, instead of 3.9 MB): Fig 1 is drawn as the page opens, and the others when you scroll near them or when the browser is idle.
 
 | To | Mouse | Touch | Keyboard (figure focused) |
 |---|---|---|---|
@@ -152,14 +152,14 @@ node source/build.mjs --light   # writes starship-light.html
 node source/build.mjs           # writes starship.html
 ```
 
-- `source/build.mjs` holds the model for Fig 1 (every number above), all its geometry, and every word on the page in English and Chinese.
-- `source/live.js` is Fig 1's interaction: springs, the tour, zoom and pan, the side panel, the payload switch, pointer, touch and keyboard, and the language switch shared by every figure.
+- `source/build.mjs` writes the page: the words, panels and controls as HTML, and the figure modules bundled into one script with a few lines of bundler (no dependencies).
+- `source/stack.mjs` holds the model for Fig 1 (every number above), all its geometry, and the words of the page header and Fig 1 in English and Chinese. `source/live.js` is Fig 1's interaction: the tour, zoom and pan, the side panel, the payload switch, pointer, touch and keyboard.
 - `source/raptor.mjs` and `source/raptor-live.js` are Fig 2: the engine, its flow paths and text, and its steps, play mode and tour.
-- `source/timeline.js` is what Figs 3 and 4 share: keyframe tracks, the event panel and its links, Play, the scrubber, keys and autoplay.
+- `source/boot.js` draws each figure in the page and starts it; `source/runtime.js` is what every figure's script shares (the page language, panel helpers, the frame loop that only runs on screen, the spring); `source/parts.mjs` is the markup every figure module shares; `source/timeline.js` is what Figs 3 and 4 share (keyframe tracks, the event panel and its links, Play, the scrubber, keys and autoplay).
 - `source/flight.mjs` and `source/flight-live.js` are Fig 3: the launch site, the booster drawn at 25 rotation angles, the arms at 13 positions, the timeline's keyframes and events, and its scene.
 - `source/orbit.mjs` and `source/orbit-live.js` are Fig 4: the ship with its cutaway and door, the 26 satellites (one small layer each), the Earth's limb and clouds, the flame, and the deployment schedule.
 - `source/starship.css` holds the page styles and the colour tokens for every material, light and dark.
-- `source/kit/` is a copy of the drawing kit the build uses.
+- `source/kit/` is a copy of the drawing kit the build uses, with two hot spots sped up for drawing in the browser (the lathe's waist test and coordinate formatting; the output is byte for byte the same).
 
 ## Credits
 

@@ -3,6 +3,7 @@
 // flow paths Raptor 3 hides inside its housings are drawn between the parts, step by step.
 import * as k from "./kit/iso-kit.mjs";
 import * as G from "./kit/lathe.mjs";
+import { cornersHtml, esc, figureHtml, screenOf, specsHtml, waiting, wordsFor } from "./parts.mjs";
 
 const DEG = Math.PI / 180;
 const TAU = Math.PI * 2;
@@ -64,7 +65,7 @@ const Z = {
   fInlet: [TOP_S + 0.5, TOP_S + 0.55],
 };
 
-export function buildRaptor({ esc }) {
+export function buildRaptor() {
   const fitPoints = [];
   const box = (x0, y0, z0, x1, y1, z1) => {
     for (const x of [x0, x1]) for (const y of [y0, y1]) for (const z of [z0, z1]) fitPoints.push([x * U, y * U, z * U]);
@@ -285,11 +286,7 @@ export function buildRaptor({ esc }) {
     flows.push(`<g class="rp-flow" data-kind="ch4" data-step="2" data-thin><path class="rp-duct" d="${d}"/><path class="rp-stream" d="${d}"/></g>`);
   }
 
-  const unit = (vector) => {
-    const o = at([0, 0, 0]);
-    const p = at(vector);
-    return [p[0] - o[0], p[1] - o[1]];
-  };
+  const unit = screenOf(P);
   const groups = ORDER.map((id) => {
     const m = (MOVES[id] ?? [0, 0, 0]).map((v) => v * U);
     return `<g class="rp-it" data-piece="${id}" data-m="${m.map((v) => v.toFixed(1)).join(",")}">${pieces[id].join("")}</g>`;
@@ -320,18 +317,17 @@ export function buildRaptor({ esc }) {
   };
 
   const en = TEXT.en;
-  const tx = (key) => `data-rt="${key}">${esc(en.ui[key])}`;
+  const tx = wordsFor("rt", en.ui);
   const stepButtons = STEPS.map((n) => `<button type="button" class="ss-part rp-step" data-step="${n}"><span class="ss-num">${n}</span><span class="rp-step-name">${esc(en.steps[n].short)}</span></button>`).join("");
   const keys = [["var(--rp-lox)", "keyLox"], ["var(--rp-ch4)", "keyCh4"], ["var(--rp-oxgas)", "keyOxgas"], ["var(--rp-fuelgas)", "keyFuelgas"], ["var(--rp-hot)", "keyHot"]]
     .map(([colour, key]) => `<span class="ss-key"><i style="--key:${colour}"></i><span ${tx(key)}</span></span>`)
     .join("");
-  const specsHtml = (list) => list.map(([key, value]) => `<dt>${esc(key)}</dt><dd>${esc(value)}</dd>`).join("");
-  const corners = `<div class="iso-plate-corners" aria-hidden="true"><span class="iso-plate-corner" data-corner="fig" ${tx("fig")}</span><span class="iso-plate-corner" data-corner="title" ${tx("figTitle")}</span><span class="iso-plate-corner" data-corner="readout" data-readout>${esc(en.idle)}</span></div>`;
-  const stage = `<div class="ss-stage rp-stage" tabindex="0" role="slider" data-rt-aria="stage" aria-label="${esc(en.ui.stage)}" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" aria-valuetext="${esc(en.ui.assembled)}">${svg}</div>`;
+  const corners = cornersHtml(tx, en.idle);
+  const stage = `<div class="ss-stage rp-stage" tabindex="0" role="slider" data-rt-aria="stage" aria-label="${esc(en.ui.stage)}" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" aria-valuetext="${esc(en.ui.assembled)}">${waiting(W, H)}</div>`;
   const controls = `<div class="ss-controls"><button type="button" class="ss-button" data-apart aria-pressed="false">${esc(en.ui.apart)}</button><button type="button" class="ss-button" data-play aria-pressed="false">${esc(en.ui.play)}</button><span class="ss-hint" ${tx("hint")}</span></div>`;
   const panel = `<aside class="iso-plate ss-panel rp-panel" data-rt-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts ss-chips-row">${stepButtons}</div><h3 class="ss-panel-head"><span class="ss-panel-num" data-p-num>R3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span></h3><p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-keys">${keys}</div></aside>`;
-  const html = `<figure class="iso-figure ss rp" id="raptor"><header class="ss-fig-head"><h2 ${tx("fig2Head")}</h2><p ${tx("fig2Intro")}</p></header><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("notes")}</span></figcaption></figure>`;
-  return { html, data };
+  const html = figureHtml({ id: "raptor", cls: "rp", tx, head: "fig2Head", intro: "fig2Intro", card: corners + stage + controls, panel });
+  return { html, art: svg, data };
 }
 
 const TEXT = {

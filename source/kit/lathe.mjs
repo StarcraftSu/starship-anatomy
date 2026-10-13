@@ -481,7 +481,7 @@ function sideOf(meridian) {
   return side.length >= 3 ? side : null;
 }
 
-function surfaceOf(side, F, P, rims, { samples = 96, slope = null } = {}) {
+function surfaceOf(side, F, P, rims, { samples = 96, slope = null, waist = 0.5 } = {}) {
   const V = viewOf(P);
   const aV = dot3(F.a, V);
   const facing = Math.atan2(dot3(F.v, V), dot3(F.u, V));
@@ -510,20 +510,30 @@ function surfaceOf(side, F, P, rims, { samples = 96, slope = null } = {}) {
   const fill = pathOf([...L, ...topArc, ...[...R].reverse(), ...bottomArc], true);
   const outline = [pathOf(L), pathOf(R), keepLast ? pathOf(topArc) : "", keepFirst ? pathOf(bottomArc) : ""].join("");
   const hull = hullOf([...arc(s0, r0, 0, TAU - 1e-6, Math.PI), ...arc(s1, r1, 0, TAU - 1e-6, Math.PI), ...L, ...R]);
-  let gap = 0;
+  // Is the body waisted, with some silhouette point more than `waist` inside the hull? One such point settles it,
+  // and each point stops at the first hull edge within reach, starting from the edge the previous point found.
+  let wide = false;
+  let from = 0;
   for (const p of [...L, ...R]) {
-    let best = Infinity;
-    for (let index = 0; index < hull.length; index++) {
+    let near = false;
+    for (let step = 0; step < hull.length && !near; step++) {
+      const index = (from + step) % hull.length;
       const a = hull[index];
       const b = hull[(index + 1) % hull.length];
       const dx = b[0] - a[0];
       const dy = b[1] - a[1];
       const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)));
-      best = Math.min(best, Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dy * t));
+      if (Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dy * t) <= waist) {
+        near = true;
+        from = index;
+      }
     }
-    gap = Math.max(gap, best);
+    if (!near) {
+      wide = true;
+      break;
+    }
   }
-  return { fill, outline, gap };
+  return { fill, outline, wide };
 }
 
 export const softOf = (meridian) => meridian.some((point) => Boolean(point[2]));
@@ -658,8 +668,8 @@ export function outlineOf(meridian, F, P, { steps = stepsFor(Math.max(...meridia
   let outline;
   const shape = shapeOf(meridian, P, smooth);
   const side = fill === "auto" || fill === "surface" ? sideOf(shape) : null;
-  const surface = side && !hole ? surfaceOf(side, F, P, rims, { slope: smooth && smooth.slope ? smooth.slope : null }) : null;
-  if (surface && (fill === "surface" || surface.gap > waist)) {
+  const surface = side && !hole ? surfaceOf(side, F, P, rims, { slope: smooth && smooth.slope ? smooth.slope : null, waist }) : null;
+  if (surface && (fill === "surface" || surface.wide)) {
     fillPath = surface.fill;
     outline = surface.outline;
   } else if (fill === "hull" || fill === "auto" || fill === "surface") {

@@ -21,9 +21,14 @@ export function depthOf([x, y, z], projection) {
     const { sinA, cosA, sinE, cosE } = cameraOf(projection);
     return (x * cosA + y * sinA) * cosE + z * sinE;
 }
+// One decimal, no trailing ".0", never "-0"; written with integer arithmetic because it runs for every coordinate.
 const tenth = (value) => {
-    const text = (Math.round(value * 10) / 10).toFixed(1).replace(/\.0$/, "");
-    return text === "-0" ? "0" : text;
+    const tenths = Math.round(value * 10);
+    if (tenths === 0)
+        return "0";
+    const size = Math.abs(tenths);
+    const whole = `${tenths < 0 ? "-" : ""}${Math.floor(size / 10)}`;
+    return size % 10 ? `${whole}.${size % 10}` : whole;
 };
 export function pathOf(points, closed = false) {
     if (!points.length)

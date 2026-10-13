@@ -15,8 +15,7 @@
   const flowsEl = stage.querySelector("[data-flows]");
   const flowEls = [...stage.querySelectorAll(".rp-flow")];
   const orgEls = [...stage.querySelectorAll("[data-org]")];
-  const still = matchMedia("(prefers-reduced-motion: reduce)");
-  const live = document.querySelector("[data-live]");
+  const { still, touch } = SS;
 
   const nodes = [...stage.querySelectorAll(".rp-it")].map((el) => ({ el: el.ownerSVGElement, id: el.dataset.piece, m: el.dataset.m.split(",").map(Number), shown: "" }));
   let pxPerUnit = (svg.getBoundingClientRect().width || D.W) / D.W;
@@ -24,7 +23,7 @@
   const MOVING = IDS.filter((id) => D.stagger.includes(id));
   const spring = Object.fromEntries(IDS.map((id) => [id, { x: 0, v: 0, target: 0, pending: null }]));
 
-  let lang = document.documentElement.lang.startsWith("zh") ? "zh" : "en";
+  let lang = SS.lang;
   const T = () => D.t[lang];
   let clock = 0;
   let apart = false;
@@ -35,27 +34,17 @@
   let inside = false;
   let leaveTimer = 0;
   let idleTimer = 0;
-  const touch = matchMedia("(hover: none)");
   let touring = !still.matches && !touch.matches;
   let tourClock = -1.4;
-  let visible = false;
-  let frame = 0;
-  let last = 0;
   let flowShown = -1;
 
   const PLAY_STEP = 4.2;
 
-  function say(text) {
-    if (readout.textContent !== text) readout.textContent = text;
-  }
+  const say = (text) => SS.write(readout, text);
 
   function describe() {
     const words = T();
-    const text = step ? `${words.steps[step].title}: ${words.steps[step].say}` : apart ? words.ui.apartSay : words.ui.assembled;
-    if (stage.getAttribute("aria-valuetext") !== text) {
-      stage.setAttribute("aria-valuetext", text);
-      if (!touring && !playing && live) live.textContent = text;
-    }
+    SS.announce(stage, step ? `${words.steps[step].title}: ${words.steps[step].say}` : apart ? words.ui.apartSay : words.ui.assembled, !touring && !playing);
   }
 
   function setApart(on) {
@@ -80,32 +69,19 @@
     pNum.textContent = step ? String(step) : "R3";
     pTitle.textContent = data.title;
     pText.textContent = data.text;
-    pSpecs.replaceChildren(
-      ...data.specs.flatMap(([key, value]) => {
-        const dt = document.createElement("dt");
-        dt.textContent = key;
-        const dd = document.createElement("dd");
-        dd.textContent = value;
-        return [dt, dd];
-      }),
-    );
+    SS.fillSpecs(pSpecs, data.specs);
   }
 
-  // Hold the layout at its tallest panel, so nothing under the figure moves when the step changes.
   const layout = root.querySelector(".ss-layout");
   let holdTimer = 0;
   function holdHeight() {
-    layout.style.minHeight = "";
     const keep = step;
-    let tallest = 0;
-    for (const n of [0, ...D.steps]) {
+    SS.holdTallest(layout, [0, ...D.steps], (n) => {
       step = n;
       fillPanel();
-      tallest = Math.max(tallest, layout.offsetHeight);
-    }
+    });
     step = keep;
     fillPanel();
-    layout.style.minHeight = `${Math.ceil(tallest)}px`;
   }
   window.addEventListener("resize", () => {
     pxPerUnit = (svg.getBoundingClientRect().width || D.W) / D.W;
@@ -130,30 +106,6 @@
     run();
   }
 
-  function steer(state, dt, calm) {
-    if (state.pending && clock >= state.pending.at) {
-      state.target = state.pending.value;
-      state.pending = null;
-    }
-    if (calm) {
-      state.x = state.target;
-      state.v = 0;
-      return state.pending !== null;
-    }
-    const { stiffness, damping, substeps } = D.spring;
-    for (let index = 0; index < substeps; index++) {
-      const h = dt / substeps;
-      state.v += ((state.target - state.x) * stiffness - state.v * damping) * h;
-      state.x += state.v * h;
-    }
-    if (Math.abs(state.target - state.x) < 2e-4 && Math.abs(state.v) < 2e-4) {
-      state.x = state.target;
-      state.v = 0;
-      return state.pending !== null;
-    }
-    return true;
-  }
-
   function place() {
     for (const node of nodes) {
       const share = spring[node.id].x;
@@ -166,7 +118,7 @@
     // The paths only make sense with the parts where they were drawn: fade them in over the last stretch.
     const least = Math.min(...MOVING.map((id) => spring[id].x));
     const shown = Math.round(Math.min(1, Math.max(0, (least - 0.82) / 0.16)) * 100) / 100;
-    root.toggleAttribute("data-flowing", visible && shown > 0);
+    root.toggleAttribute("data-flowing", frames.visible && shown > 0);
     if (shown !== flowShown) {
       flowShown = shown;
       flowsEl.style.opacity = String(shown);
@@ -221,9 +173,7 @@
     run();
   }
 
-  function tick(now) {
-    const dt = last ? Math.min((now - last) / 1000, 1 / 30) : 1 / 60;
-    last = now;
+  function tick(dt) {
     clock += dt;
     const calm = still.matches;
     if (touring) {
@@ -244,27 +194,14 @@
       }
     }
     let busy = false;
-    for (const id of IDS) if (steer(spring[id], dt, calm)) busy = true;
+    for (const id of IDS) if (SS.steer(spring[id], dt, calm, clock, D.spring)) busy = true;
     place();
     say(readoutText());
-    frame = visible && (busy || touring || playing) ? requestAnimationFrame(tick) : 0;
+    return busy || touring || playing;
   }
-
-  function run() {
-    if (!frame && visible) {
-      last = 0;
-      frame = requestAnimationFrame(tick);
-    }
-  }
-
-  new IntersectionObserver(
-    (entries) => {
-      visible = entries[entries.length - 1].isIntersecting;
-      root.toggleAttribute("data-flowing", visible && flowShown > 0);
-      if (visible) run();
-    },
-    { rootMargin: "160px 0px" },
-  ).observe(root);
+  // The flow paths' dashes only run while the figure is on screen.
+  const frames = SS.loop(root, tick, { seen: (on) => root.toggleAttribute("data-flowing", on && flowShown > 0) });
+  const { run } = frames;
 
   stage.addEventListener("pointermove", (event) => {
     if (event.pointerType !== "mouse") return;
@@ -348,8 +285,7 @@
   function applyLang() {
     const words = T();
     root.dataset.lang = lang;
-    for (const el of root.querySelectorAll("[data-rt]")) el.textContent = words.ui[el.dataset.rt];
-    for (const el of root.querySelectorAll("[data-rt-aria]")) el.setAttribute("aria-label", words.ui[el.dataset.rtAria]);
+    SS.swapWords(root, "rt", words.ui);
     svg.setAttribute("aria-label", words.ui.label);
     stepButtons.forEach((button) => (button.querySelector(".rp-step-name").textContent = words.steps[button.dataset.step].short));
     apartButton.textContent = apart ? words.ui.together : words.ui.apart;
@@ -360,8 +296,8 @@
     describe();
   }
 
-  document.addEventListener("ss-lang", (event) => {
-    lang = event.detail;
+  SS.onLang((next) => {
+    lang = next;
     applyLang();
   });
 

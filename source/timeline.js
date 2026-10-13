@@ -1,6 +1,6 @@
 // The timeline figures (Fig 3 and Fig 4) share this: keyframe tracks, the event panel with its links into Fig 1,
-// Play, Restart, the scrubber and keys, autoplay the first time a figure is seen (not on touch or with reduced
-// motion), a layout that holds its tallest panel, and the language switch. Each figure passes in its own scene.
+// Play, Restart, the scrubber and keys, and autoplay the first time a figure is seen (not on touch or with reduced
+// motion). Each figure passes in its own scene.
 const SS_TIMELINE = (() => {
   // Motion follows a monotone cubic through its keyframes (no overshoot); switches follow straight lines.
   function cubic(keys) {
@@ -39,13 +39,7 @@ const SS_TIMELINE = (() => {
     const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
     return t * t * (3 - 2 * t);
   };
-  const clockText = (tm) => {
-    const s = Math.round(Math.abs(tm));
-    const sign = tm < 0 ? "−" : "+";
-    const sec = String(s % 60).padStart(2, "0");
-    if (s < 3600) return `T${sign}${Math.floor(s / 60)}:${sec}`;
-    return `T${sign}${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, "0")}:${sec}`;
-  };
+  const { clockText } = SS_MODULES.parts;
 
   function mount(root, D, makeScene) {
     const stage = root.querySelector(".fl-stage");
@@ -65,11 +59,9 @@ const SS_TIMELINE = (() => {
     const restartButton = root.querySelector("[data-restart]");
     const scrub = root.querySelector("[data-scrub]");
     const secEls = [...stage.querySelectorAll("[data-sec]")];
-    const still = matchMedia("(prefers-reduced-motion: reduce)");
-    const touch = matchMedia("(hover: none)");
-    const live = document.querySelector("[data-live]");
+    const { still, touch } = SS;
 
-    let lang = document.documentElement.lang.startsWith("zh") ? "zh" : "en";
+    let lang = SS.lang;
     const T = () => D.t[lang];
     const clockAt = linear(D.tracks.clock);
 
@@ -88,10 +80,7 @@ const SS_TIMELINE = (() => {
     let playing = false;
     let touring = false;
     let hold = 0;
-    let visible = false;
     let seen = false;
-    let frame = 0;
-    let last = 0;
     let shownEvent = undefined;
     let wobble = 0;
     let measuring = false;
@@ -118,8 +107,7 @@ const SS_TIMELINE = (() => {
 
     function render() {
       const tm = clockAt(ta);
-      const text = `${clockText(tm)} · ${scene.render(ta, tm)}`;
-      if (readout.textContent !== text) readout.textContent = text;
+      SS.write(readout, `${clockText(tm)} · ${scene.render(ta, tm)}`);
       if (document.activeElement !== scrub) scrub.value = String(ta);
       stage.setAttribute("aria-valuenow", ta.toFixed(1));
       const event = eventAt(ta);
@@ -141,15 +129,7 @@ const SS_TIMELINE = (() => {
       pNum.textContent = event ? clockText(event.tm) : "T";
       pTitle.textContent = data.title;
       pText.textContent = data.text;
-      pSpecs.replaceChildren(
-        ...data.specs.flatMap(([key, value]) => {
-          const dt = document.createElement("dt");
-          dt.textContent = key;
-          const dd = document.createElement("dd");
-          dd.textContent = value;
-          return [dt, dd];
-        }),
-      );
+      SS.fillSpecs(pSpecs, data.specs);
       const sections = event ? event.sections : [];
       linksBox.hidden = !sections.length;
       linkList.replaceChildren(
@@ -174,33 +154,22 @@ const SS_TIMELINE = (() => {
       if (sections.length) stage.setAttribute("data-focus", "");
       else stage.removeAttribute("data-focus");
       chips.forEach((chip) => chip.toggleAttribute("data-on", !!event && chip.dataset.event === event.id));
-      const say = event ? `${data.title}, ${clockText(event.tm)}` : words.overview.title;
-      if (stage.getAttribute("aria-valuetext") !== say) {
-        stage.setAttribute("aria-valuetext", say);
-        if (!playing && live) live.textContent = say;
-      }
+      SS.announce(stage, event ? `${data.title}, ${clockText(event.tm)}` : words.overview.title, !playing);
     }
 
-    // Fill the panel with every event once and keep the tallest height, so the page below never moves.
     function holdHeight() {
       measuring = true;
-      layout.style.minHeight = "";
       const keep = shownEvent;
-      let tallest = 0;
-      for (const event of [null, ...D.events]) {
+      SS.holdTallest(layout, [null, ...D.events], (event) => {
         shownEvent = event;
         fillPanel();
-        tallest = Math.max(tallest, layout.offsetHeight);
-      }
+      });
       shownEvent = keep;
       measuring = false;
       fillPanel();
-      layout.style.minHeight = `${Math.ceil(tallest)}px`;
     }
 
-    function tick(now) {
-      const dt = last ? Math.min((now - last) / 1000, 1 / 30) : 1 / 60;
-      last = now;
+    function tick(dt) {
       wobble += dt;
       if (playing) {
         if (ta >= D.end) {
@@ -212,15 +181,20 @@ const SS_TIMELINE = (() => {
         } else ta = Math.min(D.end, ta + dt);
       }
       render();
-      frame = visible && playing ? requestAnimationFrame(tick) : 0;
+      return playing;
     }
-
-    function run() {
-      if (!frame && visible) {
-        last = 0;
-        frame = requestAnimationFrame(tick);
-      }
-    }
+    // The first time the figure comes into view it starts playing by itself, except on touch or reduced motion.
+    const { run } = SS.loop(stage, tick, {
+      margin: "0px 0px -20% 0px",
+      seen: (on) => {
+        if (!on || seen) return;
+        seen = true;
+        if (!still.matches && !touch.matches) {
+          touring = true;
+          setPlaying(true);
+        }
+      },
+    });
 
     function setPlaying(on) {
       playing = on;
@@ -241,21 +215,6 @@ const SS_TIMELINE = (() => {
       ta = Math.min(D.end, Math.max(0, time));
       render();
     }
-
-    new IntersectionObserver(
-      (entries) => {
-        visible = entries[entries.length - 1].isIntersecting;
-        if (visible && !seen) {
-          seen = true;
-          if (!still.matches && !touch.matches) {
-            touring = true;
-            setPlaying(true);
-          }
-        }
-        if (visible) run();
-      },
-      { rootMargin: "0px 0px -20% 0px" },
-    ).observe(stage);
 
     playButton.addEventListener("click", () => {
       touring = false;
@@ -310,16 +269,15 @@ const SS_TIMELINE = (() => {
 
     function applyLang() {
       const words = T();
-      for (const el of root.querySelectorAll("[data-ft]")) el.textContent = words.ui[el.dataset.ft];
-      for (const el of root.querySelectorAll("[data-ft-aria]")) el.setAttribute("aria-label", words.ui[el.dataset.ftAria]);
+      SS.swapWords(root, "ft", words.ui);
       svg.setAttribute("aria-label", words.ui.label);
       chips.forEach((chip) => (chip.querySelector(".fl-event-name").textContent = words.events[chip.dataset.event].short));
       playButton.textContent = playing ? words.ui.pause : words.ui.play;
       holdHeight();
       render();
     }
-    document.addEventListener("ss-lang", (event) => {
-      lang = event.detail;
+    SS.onLang((next) => {
+      lang = next;
       applyLang();
     });
 

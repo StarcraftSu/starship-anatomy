@@ -1309,7 +1309,7 @@
   fill: url(#ob-flame-core);
 }
 
-.ob-stage > svg.ob-wide {
+.ob .fl-stage > svg.ob-wide {
   width: 200%;
 }
 

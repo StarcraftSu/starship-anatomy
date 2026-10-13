@@ -3,6 +3,7 @@
 // its side cut open; the page slides the satellites, the clouds far below and the flame, all on the GPU.
 import * as k from "./kit/iso-kit.mjs";
 import * as G from "./kit/lathe.mjs";
+import { esc, screenOf, timelineHtml } from "./parts.mjs";
 
 const DEG = Math.PI / 180;
 const U = 2;
@@ -66,7 +67,7 @@ const norm = (deg) => ((deg % 360) + 360) % 360;
 const within = (deg, a0, a1) => norm(deg - a0) <= a1 - a0;
 const inSlot = (s, deg) => s > SLOT.s0 && s < SLOT.s1 && within(deg, SLOT.a0, SLOT.a1);
 
-export function buildOrbit({ esc }) {
+export function buildOrbit() {
   const SF = G.frameOf([0, 0, 0], [1, 0, 0], [0, 0, 1], [0, 1, 0]);
   const on = (s, r, deg) => G.pointOf(SF, s * U, r * U, deg * DEG);
   const radial = (deg) => G.radialOf(SF, deg * DEG);
@@ -336,11 +337,7 @@ export function buildOrbit({ esc }) {
     layer(`<g class="ob-ship">${doorSvg}</g>`, { fade: true, attrs: " data-door" }),
   ].join("");
 
-  const unit = (vector) => {
-    const o = at([0, 0, 0]);
-    const p = at(vector);
-    return [p[0] - o[0], p[1] - o[1]];
-  };
+  const unit = screenOf(P);
   const data = {
     W,
     H,
@@ -355,21 +352,8 @@ export function buildOrbit({ esc }) {
     t: TEXT,
   };
 
-  const en = TEXT.en;
-  const tx = (key) => `data-ft="${key}">${esc(en.ui[key])}`;
-  const fmtT = (tm) => {
-    const s = Math.round(Math.abs(tm));
-    const sec = String(s % 60).padStart(2, "0");
-    return s < 3600 ? `T+${Math.floor(s / 60)}:${sec}` : `T+${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, "0")}:${sec}`;
-  };
-  const chips = EVENTS.map((event) => `<button type="button" class="ss-part fl-event" data-event="${event.id}"><span class="ss-num">${fmtT(event.tm)}</span><span class="fl-event-name">${esc(en.events[event.id].short)}</span></button>`).join("");
-  const specsHtml = (list) => list.map(([key, value]) => `<dt>${esc(key)}</dt><dd>${esc(value)}</dd>`).join("");
-  const cornersHtml = `<div class="iso-plate-corners" aria-hidden="true"><span class="iso-plate-corner" data-corner="fig" ${tx("fig")}</span><span class="iso-plate-corner" data-corner="title" ${tx("figTitle")}</span><span class="iso-plate-corner" data-corner="readout" data-readout>${fmtT(TRACKS.clock[0][1])}</span></div>`;
-  const stage = `<div class="ss-stage fl-stage ob-stage" tabindex="0" role="slider" data-ft-aria="stage" aria-label="${esc(en.ui.stage)}" aria-valuemin="0" aria-valuemax="${END}" aria-valuenow="0" aria-valuetext="${esc(en.overview.title)}">${svg}</div>`;
-  const controls = `<div class="ss-controls fl-controls"><button type="button" class="ss-button" data-play aria-pressed="false">${esc(en.ui.play)}</button><button type="button" class="ss-button" data-restart ${tx("restart")}</button><input class="fl-scrub" type="range" min="0" max="${END}" step="0.05" value="0" data-scrub data-ft-aria="scrub" aria-label="${esc(en.ui.scrub)}"></div>`;
-  const panel = `<aside class="iso-plate ss-panel fl-panel" data-ft-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts ss-chips2">${chips}</div><h3 class="ss-panel-head"><span class="ss-panel-num" data-p-num>T</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span></h3><p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="fl-links" data-p-links hidden><span class="fl-links-label" ${tx("linked")}</span><div class="fl-link-list" data-p-link-list></div></div></aside>`;
-  const html = `<figure class="iso-figure ss fl ob" id="orbit"><header class="ss-fig-head"><h2 ${tx("fig4Head")}</h2><p ${tx("fig4Intro")}</p></header><div class="ss-layout"><div class="iso-plate ss-card">${cornersHtml}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("notes")}</span></figcaption></figure>`;
-  return { html, data };
+  const html = timelineHtml({ id: "orbit", cls: "fl ob", W, H, end: END, start: TRACKS.clock[0][1], events: EVENTS, en: TEXT.en, head: "fig4Head", intro: "fig4Intro" });
+  return { html, art: svg, data };
 }
 
 const TEXT = {

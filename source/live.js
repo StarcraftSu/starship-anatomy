@@ -3,7 +3,6 @@ const root = document.querySelector(".ss");
 const stage = root.querySelector(".ss-stage");
 const svg = stage.querySelector("svg");
 const readout = root.querySelector("[data-readout]");
-const live = document.querySelector("[data-live]");
 const panel = root.querySelector(".ss-panel");
 const lensBox = panel.querySelector("[data-p-lens]");
 const lens = lensBox.querySelector("svg");
@@ -16,7 +15,7 @@ const toRaptor = panel.querySelector("[data-p-link]");
 const partButtons = [...panel.querySelectorAll(".ss-part")];
 const zoomLevel = root.querySelector("[data-zoom-level]");
 const apartButton = root.querySelector("[data-apart]");
-const still = matchMedia("(prefers-reduced-motion: reduce)");
+const { still, touch } = SS;
 
 const IDS = D.order;
 const SUBS = Object.keys(D.subs);
@@ -29,18 +28,7 @@ const payButtons = [...panel.querySelectorAll("[data-pay-set]")];
 const paySwitch = panel.querySelector("[data-p-pay]");
 let payload = "starlink";
 const langButton = document.querySelector(".ss-page-head [data-lang]");
-const LANGS = Object.keys(D.t);
-
-function pickLang() {
-  const asked = new URLSearchParams(location.search).get("lang");
-  if (LANGS.includes(asked)) return asked;
-  try {
-    const kept = localStorage.getItem("ss-lang");
-    if (LANGS.includes(kept)) return kept;
-  } catch {}
-  return (navigator.languages || [navigator.language]).some((code) => /^zh\b/i.test(code || "")) ? "zh" : "en";
-}
-let lang = pickLang();
+let lang = SS.lang;
 const T = () => D.t[lang];
 const sayOf = (id) => {
   const line = T().say[id];
@@ -67,30 +55,17 @@ let inside = false;
 let leaveTimer = 0;
 let idleTimer = 0;
 // On touch screens nothing plays by itself: every animated frame repaints the whole drawing, which phones feel.
-const touch = matchMedia("(hover: none)");
 let touring = !still.matches && !touch.matches;
 let tourClock = -1.5;
-let visible = false;
-let frame = 0;
-let last = 0;
 
 const view = { z: 1, cx: D.W / 2, cy: D.H / 2 };
 const goal = { z: 1, cx: D.W / 2, cy: D.H / 2, on: false };
 const lensView = { x: 0, y: 0, w: D.W, h: D.H, ready: false };
 
-function say(text) {
-  if (readout.textContent !== text) readout.textContent = text;
-}
-
-function announce(text) {
-  if (stage.getAttribute("aria-valuetext") !== text) {
-    stage.setAttribute("aria-valuetext", text);
-    if (!touring && live) live.textContent = text;
-  }
-}
+const say = (text) => SS.write(readout, text);
 
 function describe() {
-  announce(selected ? `${T().sections[selected].title}: ${sayOf(selected)}` : apart ? T().ui.apartSay : T().ui.assembled);
+  SS.announce(stage, selected ? `${T().sections[selected].title}: ${sayOf(selected)}` : apart ? T().ui.apartSay : T().ui.assembled, !touring);
 }
 
 function setApart(on) {
@@ -121,38 +96,24 @@ function fillPanel(id) {
   pTitle.textContent = data.title;
   pText.textContent = data.text;
   paySwitch.hidden = !words.pay;
-  pSpecs.replaceChildren(
-    ...data.specs.flatMap(([key, value]) => {
-      const dt = document.createElement("dt");
-      dt.textContent = key;
-      const dd = document.createElement("dd");
-      dd.textContent = value;
-      return [dt, dd];
-    }),
-  );
+  SS.fillSpecs(pSpecs, data.specs);
   lensBox.hidden = !id;
   zoomHere.hidden = !id;
   toRaptor.hidden = !(id && D.sections[id].raptor);
   if (id) lensView.ready = false;
 }
 
-// Hold the layout at its tallest panel, so nothing under the figure moves when the panel changes.
 const layout = root.querySelector(".ss-layout");
 let holdTimer = 0;
 function holdHeight() {
-  layout.style.minHeight = "";
   const keep = payload;
-  let tallest = 0;
-  for (const name of ["starlink", "crew"]) {
+  const states = ["starlink", "crew"].flatMap((name) => [null, ...IDS].map((id) => [name, id]));
+  SS.holdTallest(layout, states, ([name, id]) => {
     payload = name;
-    for (const id of [null, ...IDS]) {
-      fillPanel(id);
-      tallest = Math.max(tallest, layout.offsetHeight);
-    }
-  }
+    fillPanel(id);
+  });
   payload = keep;
   fillPanel(selected);
-  layout.style.minHeight = `${Math.ceil(tallest)}px`;
 }
 
 function select(id) {
@@ -170,30 +131,6 @@ function select(id) {
   wantShows();
   describe();
   run();
-}
-
-function steer(state, dt, calm) {
-  if (state.pending && clock >= state.pending.at) {
-    state.target = state.pending.value;
-    state.pending = null;
-  }
-  if (calm) {
-    state.x = state.target;
-    state.v = 0;
-    return state.pending !== null;
-  }
-  const { stiffness, damping, substeps } = D.spring;
-  for (let index = 0; index < substeps; index++) {
-    const h = dt / substeps;
-    state.v += ((state.target - state.x) * stiffness - state.v * damping) * h;
-    state.x += state.v * h;
-  }
-  if (Math.abs(state.target - state.x) < 2e-4 && Math.abs(state.v) < 2e-4) {
-    state.x = state.target;
-    state.v = 0;
-    return state.pending !== null;
-  }
-  return true;
 }
 
 const shift = (id, m) => {
@@ -394,9 +331,7 @@ function quiet() {
   }, 9000);
 }
 
-function tick(now) {
-  const dt = last ? Math.min((now - last) / 1000, 1 / 30) : 1 / 60;
-  last = now;
+function step(dt) {
   clock += dt;
   const calm = still.matches;
   if (touring) {
@@ -410,28 +345,14 @@ function tick(now) {
     select(step.part);
   }
   let moving = false;
-  for (const id of ALL) if (steer(spring[id], dt, calm)) moving = true;
+  for (const id of ALL) if (SS.steer(spring[id], dt, calm, clock, D.spring)) moving = true;
   place();
   if (stepView(dt, calm)) moving = true;
   if (stepLens(dt, calm, moving)) moving = true;
   say(readoutText());
-  frame = visible && (moving || touring) ? requestAnimationFrame(tick) : 0;
+  return moving || touring;
 }
-
-function run() {
-  if (!frame && visible) {
-    last = 0;
-    frame = requestAnimationFrame(tick);
-  }
-}
-
-new IntersectionObserver(
-  (entries) => {
-    visible = entries[entries.length - 1].isIntersecting;
-    if (visible) run();
-  },
-  { rootMargin: "160px 0px" },
-).observe(root);
+const { run } = SS.loop(root, step);
 
 function pieceAt(event) {
   const hit = document.elementFromPoint(event.clientX, event.clientY);
@@ -652,39 +573,25 @@ window.addEventListener("resize", () => {
 
 function applyLang() {
   const words = T();
-  document.documentElement.lang = lang === "zh" ? "zh-Hans" : "en";
   document.title = words.pageTitle;
   root.dataset.lang = lang;
-  for (const el of document.querySelectorAll("[data-t]")) el.textContent = words.ui[el.dataset.t];
-  for (const el of root.querySelectorAll("[data-t-aria]")) el.setAttribute("aria-label", words.ui[el.dataset.tAria]);
+  SS.swapWords(document, "t", words.ui);
   svg.setAttribute("aria-label", words.ui.label);
   partButtons.forEach((button) => (button.querySelector(".ss-part-name").textContent = words.sections[button.dataset.part].short));
   apartButton.textContent = apart ? words.ui.together : words.ui.apart;
-  const other = LANGS.find((code) => code !== lang);
   langButton.textContent = words.ui.langSwitch;
-  langButton.lang = other === "zh" ? "zh-Hans" : "en";
+  langButton.lang = lang === "zh" ? "en" : "zh-Hans";
   holdHeight();
   say(readoutText());
   stage.setAttribute("aria-valuetext", "");
   describe();
 }
 
-// Any language button on the page asks with ss-lang-pick; this script keeps the choice and tells every figure.
-document.addEventListener("ss-lang-pick", (event) => {
-  const next = event.detail;
-  try {
-    localStorage.setItem("ss-lang", next);
-  } catch {}
-  const url = new URL(location.href);
-  url.searchParams.set("lang", next);
-  history.replaceState(null, "", url);
-  document.dispatchEvent(new CustomEvent("ss-lang", { detail: next }));
-});
-document.addEventListener("ss-lang", (event) => {
-  lang = event.detail;
+SS.onLang((next) => {
+  lang = next;
   applyLang();
 });
-langButton.addEventListener("click", () => document.dispatchEvent(new CustomEvent("ss-lang-pick", { detail: LANGS.find((code) => code !== lang) })));
+langButton.addEventListener("click", () => document.dispatchEvent(new CustomEvent("ss-lang-pick", { detail: lang === "zh" ? "en" : "zh" })));
 
 // Other figures ask Fig 1 to show a section: pick it, take the stack apart and scroll up to it.
 document.addEventListener("ss-show-section", (event) => {
