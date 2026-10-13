@@ -22,6 +22,10 @@ A third figure plays one whole flight, from the pad to the booster's catch:
 
 ![Hot staging on Fig 3's timeline: the ship's engines firing through the interstage vents, with the event panel linking to Fig 1](preview-flight.png)
 
+A fourth follows the ship to orbit and watches it let its 26 Starlink satellites go:
+
+![Fig 4 halfway through the deployment: the payload bay cut open on the ship's side, half the satellite stack gone, three satellites drifting up from the slot door](preview-orbit.png)
+
 ## View it
 
 **Live: https://starcraftsu.github.io/starship-anatomy/** — follows your system's light or dark setting. Or go straight to the [light](https://starcraftsu.github.io/starship-anatomy/starship-light.html) or [dark](https://starcraftsu.github.io/starship-anatomy/starship.html) page.
@@ -69,9 +73,24 @@ The stack stands on its launch mount beside the tower with its two catch arms. A
 | Falling back on the grid fins | T+4:00 | 03 grid fins |
 | Landing burn | T+6:30 | 01 engines |
 | Caught by the tower | T+6:54 | 03 grid fins |
-| Ship in orbit | about T+8:30 | 04, 06 payload |
+| Ship in orbit | about T+8:30 | 04, 06 payload; continues in Fig 4 |
 
 Each event outlines the parts it uses on the rocket in Fig 3, and its buttons in the panel jump up to Fig 1 with that section picked and taken apart. The camera follows the vehicle, the sky darkens with altitude, and the readout gives mission time and approximate altitude.
+
+## Fig 4: to orbit, and the satellites out
+
+The ship flies on alone above the curve of the Earth, its payload bay cut open on the side facing you so the stack of satellites on the dispenser shows. The same controls as Fig 3 play it.
+
+| Event | Time (Flight 14) | What happens |
+|---|---|---|
+| Six engines | T+2:22 | three sea-level and three vacuum Raptors burn; in vacuum the flame fans out wide and faint |
+| Cutoff | T+8:11 | engines off, just short of orbit, the ground sliding by underneath |
+| Orbit burn | T+25:28, 19 s | a short burn lifts the low point of the path out of the atmosphere: 262 × 275 km |
+| Door opens | T+34:18 | the slot door opens; the bottom satellite slides out, the stack moves down a place, again and again |
+| Last one out | T+1:04:50 | the 26th satellite leaves and the door closes |
+| Deorbit burn | T+2:12:00, 11 s | the ship turns round (the ground now slides the other way) and burns against its direction of travel |
+
+The readout counts the satellites out. Each event lights its section and links to it in Fig 1: 04 for the engines, 06 for the payload bay.
 
 ## What Fig 1 shows
 
@@ -110,6 +129,7 @@ The ship lies belly up so the heat-shield tiles and flaps face the viewer.
 | Grid fins, interstage | 3 fins about 1.5× earlier ones; interstage built into the methane tank and kept | [Super Heavy, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Super_Heavy) |
 | PEZ dispenser | mounted on the forward dome; satellites pushed out one at a time from the base, the stack lowered for the next | [Starship spacecraft, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_(spacecraft)) |
 | Starlink V3 | 26 deployed on Flight 14 (September 2026); about 2 t each; up to 60 per flight planned | [TelecomTV](https://www.telecomtv.com/content/next-gen-telco-infra/spacex-deploys-v3-starlink-satellites-as-starship-reaches-orbit-56354/), [Tesla Oracle](https://www.teslaoracle.com/?p=66693) |
+| Flight 14 timeline | cutoff T+8:11, orbit burn T+25:28 for 19 s into 262 × 275 km at 30.5°, satellites out T+34:18 to T+1:04:50, deorbit burn T+2:12:00 for 11 s, entry T+2:28:52, splashdown T+3:08:30 | [Starship flight 14, Wikipedia](https://en.wikipedia.org/wiki/Starship_flight_14) |
 | Crew layout | lunar lander (HLS): two airlocks, an elevator, crew area at the top; up to 100 crew planned for Starship | [Starship spacecraft, Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_(spacecraft)) and SpaceX's HLS renders |
 
 Caveats:
@@ -118,6 +138,7 @@ Caveats:
 - The header tanks are drawn in the nose, where they have been since Ship 24; their V3 placement is not confirmed.
 - The PEZ slot and the satellites are drawn from press descriptions (folded V3 satellites about 7 × 3.5 m); their exact sizes and the rack's layout are not published.
 - Fig 3's times follow Flight 5, the first catch; V3 flights may differ by seconds. Altitudes between the sourced points are interpolated, the timeline is compressed, and heights on screen above the tower are not to scale. The ship's time in orbit is approximate.
+- Fig 4 spaces the 26 satellites evenly between the first and the last (about 70 s apart), and its altitudes between the sourced points are approximate. SpaceX has not published how the dispenser moves the stack, which engines made the orbit and deorbit burns, or the ship's attitude while it deployed; the flame, how fast the satellites drift away and the Earth below are drawn for clarity, not to scale.
 - No crewed Starship has flown. The crew cabin is illustrative, after SpaceX's lunar-lander renders; the real lander also has no flaps or heat shield and has landing legs.
 - Engine proportions: 3.1 m long; nozzle exits drawn 1.2 m across (Wikipedia gives the engine as 1.3 m across, but twenty nozzles have to fit in a ring around the 9 m booster), throats sized from Wikipedia's expansion ratios (34.34 at sea level, 80 for the vacuum version, which shares the throat, giving a 1.8 m vacuum nozzle). Raptor 3's internal layout is not published; Fig 2 arranges its parts after the usual full-flow layout and simplifies them to turned shapes.
 - Proportions inside the tanks (dome depths, tube diameters, engine spacing) are approximate. Chines are left off because it is unclear whether V3 boosters keep them.
@@ -132,9 +153,11 @@ node source/build.mjs           # writes starship.html
 ```
 
 - `source/build.mjs` holds the model for Fig 1 (every number above), all its geometry, and every word on the page in English and Chinese.
-- `source/live.js` is Fig 1's interaction: springs, the tour, zoom and pan, the side panel, the payload switch, pointer, touch and keyboard, and the language switch shared by both figures.
+- `source/live.js` is Fig 1's interaction: springs, the tour, zoom and pan, the side panel, the payload switch, pointer, touch and keyboard, and the language switch shared by every figure.
 - `source/raptor.mjs` and `source/raptor-live.js` are Fig 2: the engine, its flow paths and text, and its steps, play mode and tour.
-- `source/flight.mjs` and `source/flight-live.js` are Fig 3: the launch site, the booster drawn at 25 rotation angles, the arms at 13 positions, the timeline's keyframes and events, and the playback.
+- `source/timeline.js` is what Figs 3 and 4 share: keyframe tracks, the event panel and its links, Play, the scrubber, keys and autoplay.
+- `source/flight.mjs` and `source/flight-live.js` are Fig 3: the launch site, the booster drawn at 25 rotation angles, the arms at 13 positions, the timeline's keyframes and events, and its scene.
+- `source/orbit.mjs` and `source/orbit-live.js` are Fig 4: the ship with its cutaway and door, the 26 satellites (one small layer each), the Earth's limb and clouds, the flame, and the deployment schedule.
 - `source/starship.css` holds the page styles and the colour tokens for every material, light and dark.
 - `source/kit/` is a copy of the drawing kit the build uses.
 

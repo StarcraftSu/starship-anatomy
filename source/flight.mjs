@@ -35,7 +35,7 @@ const EVENTS = [
   { id: "descent", tm: 240, ta: 32, sections: ["bch4"] },
   { id: "landing", tm: 390, ta: 36.5, sections: ["beng"] },
   { id: "catch", tm: 414, ta: 42, sections: ["bch4"] },
-  { id: "orbit", tm: 510, ta: 45, sections: ["slox", "nose"] },
+  { id: "orbit", tm: 510, ta: 45, sections: ["slox", "nose"], next: "orbit" },
 ];
 
 // Playback seconds -> mission seconds, and the scene keyframes, all as [playback s, value].
@@ -350,7 +350,7 @@ export function buildFlight({ esc }) {
   const cornersHtml = `<div class="iso-plate-corners" aria-hidden="true"><span class="iso-plate-corner" data-corner="fig" ${tx("fig")}</span><span class="iso-plate-corner" data-corner="title" ${tx("figTitle")}</span><span class="iso-plate-corner" data-corner="readout" data-readout>T−0:06</span></div>`;
   const stage = `<div class="ss-stage fl-stage" tabindex="0" role="slider" data-ft-aria="stage" aria-label="${esc(en.ui.stage)}" aria-valuemin="0" aria-valuemax="${END}" aria-valuenow="0" aria-valuetext="T−0:06">${svg}</div>`;
   const controls = `<div class="ss-controls fl-controls"><button type="button" class="ss-button" data-play aria-pressed="false">${esc(en.ui.play)}</button><button type="button" class="ss-button" data-restart ${tx("restart")}</button><input class="fl-scrub" type="range" min="0" max="${END}" step="0.05" value="0" data-scrub data-ft-aria="scrub" aria-label="${esc(en.ui.scrub)}"></div>`;
-  const panel = `<aside class="iso-plate ss-panel fl-panel" data-ft-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts ss-chips2">${chips}</div><h3 class="ss-panel-head"><span class="ss-panel-num" data-p-num>T</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span></h3><p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="fl-links" data-p-links hidden><span class="fl-links-label" ${tx("linked")}</span><div class="fl-link-list" data-p-link-list></div></div></aside>`;
+  const panel = `<aside class="iso-plate ss-panel fl-panel" data-ft-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts ss-chips2">${chips}</div><h3 class="ss-panel-head"><span class="ss-panel-num" data-p-num>T</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span></h3><p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="fl-links" data-p-links hidden><span class="fl-links-label" ${tx("linked")}</span><div class="fl-link-list" data-p-link-list></div></div><a class="ss-button ss-link" href="#orbit" data-p-next hidden ${tx("toNext")}</a></aside>`;
   const html = `<figure class="iso-figure ss fl" id="flight"><header class="ss-fig-head"><h2 ${tx("fig3Head")}</h2><p ${tx("fig3Intro")}</p></header><div class="ss-layout"><div class="iso-plate ss-card">${cornersHtml}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("notes")}</span></figcaption></figure>`;
   return { html, data };
 }
@@ -369,6 +369,7 @@ const TEXT = {
       panel: "Flight events",
       stage: "Starship V3 standing on its launch mount beside the tower. Space plays or pauses the flight, the arrow keys step between events.",
       linked: "In Fig 1:",
+      toNext: "The ship goes on: Fig 4 ↓",
       notes: "Times follow Flight 5 in October 2024, the first time the tower caught a booster: Max-Q at T+0:59, engine cutoff at T+2:34 with staging at about 70 km, boostback ending at T+3:41, landing burn from T+6:30 and the catch at T+6:54. Altitudes between those points are approximate, and the timeline speeds up and slows down so the whole flight plays in under a minute. The camera follows the vehicle, so heights on screen are not to scale above the tower; the booster's flip is drawn in the plane of the picture.",
       label: "Starship V3 on its launch mount beside the launch tower with its two catch arms. A timeline plays the flight: ignition and steam, liftoff, climbing through clouds into a darkening sky, hot staging with flame from the interstage vents, the ship leaving, the booster flipping for its boostback burn, falling back with its grid fins, its landing burn, and the arms closing to catch it.",
     },
@@ -404,6 +405,7 @@ const TEXT = {
       panel: "飞行事件",
       stage: "立在发射台上、紧挨着发射塔的星舰 V3。空格键播放或暂停，方向键在事件之间跳转。",
       linked: "在图 1 中：",
+      toNext: "飞船接着往前飞：图 4 ↓",
       notes: "时间采用 2024 年 10 月第 5 次飞行的数据，那是发射塔第一次接住助推器：Max-Q 在 T+0:59，主发动机关机在 T+2:34，约 70 公里高度分离，返航点火在 T+3:41 结束，着陆点火从 T+6:30 开始，T+6:54 被接住。这些时间点之间的高度是近似值，时间轴也有快有慢，好让整次飞行在一分钟内播完。镜头跟着飞行器走，所以塔顶以上的画面高度不按比例；助推器的翻转画在画面所在的平面里。",
       label: "立在发射台上的星舰 V3，旁边是带两条接箭机械臂的发射塔。时间轴播放整次飞行：点火和水汽、起飞、穿过云层进入越来越暗的天空、热分离时级间段排气孔喷出火焰、飞船离开、助推器翻转进行返航点火、靠栅格舵落回、着陆点火，最后机械臂合拢把它接住。",
     },

@@ -5,6 +5,7 @@ import * as k from "./kit/iso-kit.mjs";
 import * as G from "./kit/lathe.mjs";
 import { buildRaptor } from "./raptor.mjs";
 import { buildFlight } from "./flight.mjs";
+import { buildOrbit } from "./orbit.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const THEME = process.argv.includes("--light") ? "light" : "dark";
@@ -915,6 +916,7 @@ const TEXT = {
       navStack: "1 · The stack",
       navRaptor: "2 · One Raptor 3",
       navFlight: "3 · One flight",
+      navOrbit: "4 · To orbit",
       fig1Head: "The stack, section by section",
       fig1Intro: "The full stack lies on a stacking jig, the ship belly up. Point at a section, or pick one beside the drawing, and the stack comes apart so you can look inside. Zoom with the scroll wheel or a pinch.",
       footer: "Drawn with the drawing kit from the anatomy skill (MIT). Not affiliated with SpaceX.",
@@ -1017,6 +1019,7 @@ const TEXT = {
       navStack: "1 · 整箭",
       navRaptor: "2 · 一台猛禽 3",
       navFlight: "3 · 一次飞行",
+      navOrbit: "4 · 入轨与放卫星",
       fig1Head: "整箭，一段一段看",
       fig1Intro: "整枚火箭平放在堆叠工装上，飞船腹部朝上。把鼠标移到某一段，或在图旁的列表里选一段，箭体就会拆开，让你看到里面。用滚轮或双指捏合缩放。",
       footer: "绘图工具来自 anatomy skill（MIT 许可）。与 SpaceX 无关。",
@@ -1152,18 +1155,21 @@ const stage = `<div class="ss-stage" tabindex="0" role="slider" data-t-aria="sta
 const controls = `<div class="ss-controls"><button type="button" class="ss-button" data-icon data-zoom="out" data-t-aria="zoomOut" aria-label="${esc(en.ui.zoomOut)}">−</button><span class="ss-zoom-level" data-zoom-level>100%</span><button type="button" class="ss-button" data-icon data-zoom="in" data-t-aria="zoomIn" aria-label="${esc(en.ui.zoomIn)}">+</button><button type="button" class="ss-button" data-zoom="reset" ${tx("reset")}</button><button type="button" class="ss-button" data-apart aria-pressed="false">${esc(en.ui.apart)}</button><span class="ss-hint" ${tx("hint")}</span></div>`;
 const paySwitch = `<div class="ss-pay" data-p-pay hidden><span class="ss-pay-label" ${tx("payLabel")}</span><div class="ss-seg" role="group"><button type="button" data-pay-set="starlink" aria-pressed="true" ${tx("payStarlink")}</button><button type="button" data-pay-set="crew" aria-pressed="false" ${tx("payCrew")}</button></div></div>`;
 const langSwitch = `<button type="button" class="ss-lang" data-lang lang="zh-Hans">${esc(en.ui.langSwitch)}</button>`;
-const header = `<header class="ss-page-head"><div class="ss-page-title"><h1 ${tx("head")}</h1><p class="ss-lede" ${tx("lede")}</p></div><nav class="ss-nav"><a href="#stack" ${tx("navStack")}</a><a href="#raptor" ${tx("navRaptor")}</a><a href="#flight" ${tx("navFlight")}</a>${langSwitch}</nav></header>`;
+const header = `<header class="ss-page-head"><div class="ss-page-title"><h1 ${tx("head")}</h1><p class="ss-lede" ${tx("lede")}</p></div><nav class="ss-nav"><a href="#stack" ${tx("navStack")}</a><a href="#raptor" ${tx("navRaptor")}</a><a href="#flight" ${tx("navFlight")}</a><a href="#orbit" ${tx("navOrbit")}</a>${langSwitch}</nav></header>`;
 const footer = `<footer class="ss-foot"><span ${tx("footer")}</span> <a href="https://github.com/StarcraftSu/starship-anatomy" ${tx("source")}</a> · <a href="https://github.com/wheresryan22/anatomy">anatomy</a></footer>`;
 const panel = `<aside class="iso-plate ss-panel" data-t-aria="panel" aria-label="${esc(en.ui.panel)}"><div class="ss-parts ss-chips2">${PARTS}</div><h3 class="ss-panel-head"><span class="ss-panel-num" data-p-num>V3</span><span class="ss-panel-title" data-p-title>${esc(en.overview.title)}</span></h3><div class="ss-lens-box" data-p-lens hidden><svg class="iso-svg ss-lens" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${lensUses}</svg></div>${paySwitch}<p class="ss-text" data-p-text>${esc(en.overview.text)}</p><dl class="ss-specs" data-p-specs>${specsHtml(en.overview.specs)}</dl><div class="ss-panel-actions"><button type="button" class="ss-button ss-zoom-here" data-zoom-here hidden ${tx("zoomHere")}</button><a class="ss-button ss-link" href="#raptor" data-p-link hidden ${tx("toRaptor")}</a></div><div class="ss-keys">${KEYS}</div></aside>`;
 const body = `${header}<figure class="iso-figure ss" id="stack"><header class="ss-fig-head"><h2 ${tx("fig1Head")}</h2><p ${tx("fig1Intro")}</p></header><div class="ss-layout"><div class="iso-plate ss-card">${corners}${stage}${controls}</div>${panel}</div><figcaption class="iso-legend"><span class="iso-caption" ${tx("notes")}</span></figcaption></figure><span class="ss-live" aria-live="polite" data-live></span>`;
 
 const FIG2 = buildRaptor({ esc });
 const FIG3 = buildFlight({ esc });
+const FIG4 = buildOrbit({ esc });
 const CSS = readFileSync(join(HERE, "starship.css"), "utf8");
 const LIVE = readFileSync(join(HERE, "live.js"), "utf8").replace("__DATA__", JSON.stringify(DATA));
 const RAPTOR_LIVE = readFileSync(join(HERE, "raptor-live.js"), "utf8").replace("__RAPTOR__", JSON.stringify(FIG2.data));
+const TIMELINE = readFileSync(join(HERE, "timeline.js"), "utf8");
 const FLIGHT_LIVE = readFileSync(join(HERE, "flight-live.js"), "utf8").replace("__FLIGHT__", JSON.stringify(FIG3.data));
-const page = k.pageHtml({ title: en.pageTitle, theme: THEME, body: `<style>${CSS}</style>${body}${FIG2.html}${FIG3.html}${footer}`, script: `${LIVE}\n${RAPTOR_LIVE}\n${FLIGHT_LIVE}`, width: 1440 });
+const ORBIT_LIVE = readFileSync(join(HERE, "orbit-live.js"), "utf8").replace("__ORBIT__", JSON.stringify(FIG4.data));
+const page = k.pageHtml({ title: en.pageTitle, theme: THEME, body: `<style>${CSS}</style>${body}${FIG2.html}${FIG3.html}${FIG4.html}${footer}`, script: `${LIVE}\n${RAPTOR_LIVE}\n${TIMELINE}\n${FLIGHT_LIVE}\n${ORBIT_LIVE}`, width: 1440 });
 const name = THEME === "light" ? "starship-light.html" : "starship.html";
 writeFileSync(join(HERE, "..", name), page);
 console.log("wrote", name, `${(page.length / 1024).toFixed(0)} KB`, `${W}×${H}`);

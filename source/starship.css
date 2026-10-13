@@ -158,7 +158,7 @@
   pointer-events: visiblePainted;
 }
 
-.ss-layer + .ss-layer {
+.ss-layer:not(:first-child) {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -1251,6 +1251,75 @@
 
 .fl .iso-plate-corner[data-corner="readout"] {
   font-variant-numeric: tabular-nums;
+}
+
+/* Fig 4: to orbit. Space and the Earth are dark in the dark theme and pale on paper in the light one. */
+
+.ob {
+  --ob-space: var(--anatomy-card);
+  --ob-star: #00000030;
+  --ob-earth: #dfe8f1;
+  --ob-cloud: #ffffff;
+  --ob-air: #7eb2ec;
+  --ob-flame-0: #fff3dc;
+  --ob-flame-1: #ffb877;
+  --ob-flame-2: #8ea6ff;
+}
+
+.iso:not([data-theme="light"]) .ob {
+  --ob-space: #04060d;
+  --ob-star: #ffffff;
+  --ob-earth: #0f2238;
+  --ob-cloud: #8ea2b8;
+  --ob-air: #3d83dd;
+}
+
+/* In sunlight above the Earth the steel reads lighter than the dark-theme default, so it parts from the tiles. */
+.iso:not([data-theme="light"]) .ob .ss-steel {
+  --anatomy-paper: #3a4048;
+  --anatomy-top: #464c55;
+  --anatomy-shade-0: #2a2e34;
+  --anatomy-shade-1: #30343b;
+  --anatomy-shade-2: #353a41;
+  --anatomy-shade-3: #3b4048;
+}
+
+.ob-space {
+  fill: var(--ob-space);
+}
+
+.ob-stars {
+  fill: var(--ob-star);
+}
+
+.ob-earth {
+  fill: var(--ob-earth);
+}
+
+.ob-cloud ellipse {
+  fill: var(--ob-cloud);
+  opacity: 0.32;
+}
+
+.ob-flame {
+  fill: url(#ob-flame);
+}
+
+.ob-flame-core {
+  fill: url(#ob-flame-core);
+}
+
+.ob-stage > svg.ob-wide {
+  width: 200%;
+}
+
+.ob-fade {
+  will-change: opacity, transform;
+}
+
+.ob-sats > .ob-sat {
+  position: absolute;
+  overflow: visible;
 }
 
 @media (max-width: 1100px) {
